@@ -12,6 +12,8 @@ type CatchFormProps = {
   setNotes: (value: string) => void;
 
   onSubmit: (e: React.FormEvent) => void;
+
+  isEditing: boolean;
 };
 
 export default function CatchForm({
@@ -24,6 +26,7 @@ export default function CatchForm({
   notes,
   setNotes,
   onSubmit,
+  isEditing,
 }: CatchFormProps) {
   return (
     <form className="space-y-5" onSubmit={onSubmit}>
@@ -86,7 +89,7 @@ export default function CatchForm({
         type="submit"
         className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition-colors"
       >
-        Gem fangst
+        {isEditing ? "Opdater fangst" : "Gem fangst"}
       </button>
     </form>
   );

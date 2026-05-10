@@ -3,11 +3,13 @@ import { Catch } from "../types/catch";
 type CatchCardProps = {
   catchItem: Catch;
   onDelete: (id: number) => void;
+  onEdit: (catchItem: Catch) => void;
 };
 
 export default function CatchCard({
   catchItem,
   onDelete,
+  onEdit,
 }: CatchCardProps) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
@@ -29,12 +31,21 @@ export default function CatchCard({
         {catchItem.notes}
       </p>
 
-      <button
-        onClick={() => onDelete(catchItem.id)}
-        className="mt-4 bg-red-500 hover:bg-red-400 text-white px-4 py-2 rounded-lg transition-colors"
-      >
-        Slet fangst
-      </button>
+      <div className="flex gap-3 mt-4">
+  <button
+    onClick={() => onEdit(catchItem)}
+    className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg transition-colors font-semibold"
+  >
+    Redigér
+  </button>
+
+  <button
+    onClick={() => onDelete(catchItem.id)}
+    className="bg-red-500 hover:bg-red-400 text-white px-4 py-2 rounded-lg transition-colors"
+  >
+    Slet
+  </button>
+</div>
     </div>
   );
 }

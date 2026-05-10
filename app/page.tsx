@@ -6,13 +6,7 @@ import CatchCard from "../components/CatchCard";
 import CatchForm from "../components/CatchForm";
 import StatsCards from "../components/StatsCards";
 
-type Catch = {
-  id: number;
-  date: string;
-  location: string;
-  bait: string;
-  notes: string;
-};
+import { Catch } from "../types/catch";
 
 export default function HomePage() {
   const [date, setDate] = useState("");
@@ -20,35 +14,81 @@ export default function HomePage() {
   const [bait, setBait] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [catches, setCatches] = useState<Catch[]>([]);
+  const [search, setSearch] = useState("");
+
+  const [editingId, setEditingId] =
+    useState<number | null>(null);
+
+  const [hydrated, setHydrated] =
+    useState(false);
+
+  const [catches, setCatches] = useState<
+    Catch[]
+  >([]);
 
   useEffect(() => {
-    const savedCatches = localStorage.getItem("catches");
+    try {
+      const savedCatches =
+        localStorage.getItem("catches");
 
-    if (savedCatches) {
-      setCatches(JSON.parse(savedCatches));
+      if (savedCatches) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setCatches(
+          JSON.parse(savedCatches) as Catch[]
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load catches",
+        error
+      );
     }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
     localStorage.setItem(
       "catches",
       JSON.stringify(catches)
     );
-  }, [catches]);
+  }, [catches, hydrated]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const newCatch: Catch = {
-      id: Date.now(),
-      date,
-      location,
-      bait,
-      notes,
-    };
+    if (editingId !== null) {
+      setCatches(
+        catches.map((catchItem) =>
+          catchItem.id === editingId
+            ? {
+                ...catchItem,
+                date,
+                location,
+                bait,
+                notes,
+              }
+            : catchItem
+        )
+      );
 
-    setCatches([newCatch, ...catches]);
+      setEditingId(null);
+    } else {
+      const newCatch: Catch = {
+        id: Date.now(),
+        date,
+        location,
+        bait,
+        notes,
+      };
+
+      setCatches([newCatch, ...catches]);
+    }
 
     setDate("");
     setLocation("");
@@ -56,16 +96,59 @@ export default function HomePage() {
     setNotes("");
   }
 
+  function editCatch(catchItem: Catch) {
+    setEditingId(catchItem.id);
+
+    setDate(catchItem.date);
+    setLocation(catchItem.location);
+    setBait(catchItem.bait);
+    setNotes(catchItem.notes);
+  }
+
   function deleteCatch(id: number) {
     setCatches(
-      catches.filter((catchItem) => catchItem.id !== id)
+      catches.filter(
+        (catchItem) => catchItem.id !== id
+      )
     );
+  }
+
+  const filteredCatches = catches.filter(
+    (catchItem) => {
+      const searchLower = search.toLowerCase();
+
+      return (
+        catchItem.location
+          .toLowerCase()
+          .includes(searchLower) ||
+        catchItem.bait
+          .toLowerCase()
+          .includes(searchLower)
+      );
+    }
+  );
+
+  if (!hydrated) {
+    return null;
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
       <div className="max-w-2xl mx-auto">
         <StatsCards catches={catches} />
+
+        <div className="mb-6">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            placeholder="Søg efter sted eller agn..."
+            className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          />
+        </div>
+
         <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 mb-8">
           <h1 className="text-4xl font-bold mb-2">
             Havørredloggen
@@ -85,15 +168,17 @@ export default function HomePage() {
             notes={notes}
             setNotes={setNotes}
             onSubmit={handleSubmit}
+            isEditing={editingId !== null}
           />
         </div>
 
         <div className="space-y-4">
-          {catches.map((catchItem) => (
+          {filteredCatches.map((catchItem) => (
             <CatchCard
               key={catchItem.id}
               catchItem={catchItem}
               onDelete={deleteCatch}
+              onEdit={editCatch}
             />
           ))}
         </div>
