@@ -8,6 +8,8 @@ import StatsCards from "../components/StatsCards";
 
 import { Catch } from "../types/catch";
 
+import { supabase } from "../lib/supabase";
+
 export default function HomePage() {
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
@@ -19,6 +21,9 @@ export default function HomePage() {
   const [editingId, setEditingId] =
     useState<number | null>(null);
 
+  const [isSaving, setIsSaving] =
+    useState(false);
+
   const [hydrated, setHydrated] =
     useState(false);
 
@@ -27,68 +32,91 @@ export default function HomePage() {
   >([]);
 
   useEffect(() => {
-    try {
-      const savedCatches =
-        localStorage.getItem("catches");
+    async function loadCatches() {
+      const { data, error } = await supabase
+        .from("catches")
+        .select("*")
+        .order("created_at", {
+          ascending: false,
+        });
 
-      if (savedCatches) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCatches(
-          JSON.parse(savedCatches) as Catch[]
-        );
+      if (error) {
+        console.error(error);
+        return;
       }
-    } catch (error) {
-      console.error(
-        "Failed to load catches",
-        error
-      );
+
+      if (data) {
+        setCatches(data as Catch[]);
+      }
+
+      setHydrated(true);
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHydrated(true);
+    loadCatches();
   }, []);
 
-  useEffect(() => {
-    if (!hydrated) {
-      return;
-    }
-
-    localStorage.setItem(
-      "catches",
-      JSON.stringify(catches)
-    );
-  }, [catches, hydrated]);
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(
+    e: React.FormEvent
+  ) {
     e.preventDefault();
 
+    setIsSaving(true);
+
     if (editingId !== null) {
+      const { data, error } = await supabase
+        .from("catches")
+        .update({
+          date,
+          location,
+          bait,
+          notes,
+        })
+        .eq("id", editingId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        setIsSaving(false);
+        return;
+      }
+
       setCatches(
         catches.map((catchItem) =>
           catchItem.id === editingId
-            ? {
-                ...catchItem,
-                date,
-                location,
-                bait,
-                notes,
-              }
+            ? (data as Catch)
             : catchItem
         )
       );
 
       setEditingId(null);
     } else {
-      const newCatch: Catch = {
-        id: Date.now(),
-        date,
-        location,
-        bait,
-        notes,
-      };
+      const { data, error } = await supabase
+        .from("catches")
+        .insert([
+          {
+            date,
+            location,
+            bait,
+            notes,
+          },
+        ])
+        .select()
+        .single();
 
-      setCatches([newCatch, ...catches]);
+      if (error) {
+        console.error(error);
+        setIsSaving(false);
+        return;
+      }
+
+      setCatches([
+        data as Catch,
+        ...catches,
+      ]);
     }
+
+    setIsSaving(false);
 
     setDate("");
     setLocation("");
@@ -105,7 +133,17 @@ export default function HomePage() {
     setNotes(catchItem.notes);
   }
 
-  function deleteCatch(id: number) {
+  async function deleteCatch(id: number) {
+    const { error } = await supabase
+      .from("catches")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     setCatches(
       catches.filter(
         (catchItem) => catchItem.id !== id
@@ -115,7 +153,8 @@ export default function HomePage() {
 
   const filteredCatches = catches.filter(
     (catchItem) => {
-      const searchLower = search.toLowerCase();
+      const searchLower =
+        search.toLowerCase();
 
       return (
         catchItem.location
@@ -155,7 +194,8 @@ export default function HomePage() {
           </h1>
 
           <p className="text-slate-400 mb-8">
-            Registrér dine fangster i fjorden
+            Registrér dine fangster i
+            fjorden
           </p>
 
           <CatchForm
@@ -168,19 +208,24 @@ export default function HomePage() {
             notes={notes}
             setNotes={setNotes}
             onSubmit={handleSubmit}
-            isEditing={editingId !== null}
+            isEditing={
+              editingId !== null
+            }
+            isSaving={isSaving}
           />
         </div>
 
         <div className="space-y-4">
-          {filteredCatches.map((catchItem) => (
-            <CatchCard
-              key={catchItem.id}
-              catchItem={catchItem}
-              onDelete={deleteCatch}
-              onEdit={editCatch}
-            />
-          ))}
+          {filteredCatches.map(
+            (catchItem) => (
+              <CatchCard
+                key={catchItem.id}
+                catchItem={catchItem}
+                onDelete={deleteCatch}
+                onEdit={editCatch}
+              />
+            )
+          )}
         </div>
       </div>
     </main>
