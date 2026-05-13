@@ -4,12 +4,14 @@ type CatchCardProps = {
   catchItem: Catch;
   onDelete: (id: number) => void;
   onEdit: (catchItem: Catch) => void;
+  isDeleting?: boolean;
 };
 
 export default function CatchCard({
   catchItem,
   onDelete,
   onEdit,
+  isDeleting = false,
 }: CatchCardProps) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
@@ -32,20 +34,22 @@ export default function CatchCard({
       </p>
 
       <div className="flex gap-3 mt-4">
-  <button
-    onClick={() => onEdit(catchItem)}
-    className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg transition-colors font-semibold"
-  >
-    Redigér
-  </button>
+        <button
+          onClick={() => onEdit(catchItem)}
+          disabled={isDeleting}
+          className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-400 text-slate-950 px-4 py-2 rounded-lg transition-colors font-semibold disabled:cursor-not-allowed"
+        >
+          Redigér
+        </button>
 
-  <button
-    onClick={() => onDelete(catchItem.id)}
-    className="bg-red-500 hover:bg-red-400 text-white px-4 py-2 rounded-lg transition-colors"
-  >
-    Slet
-  </button>
-</div>
+        <button
+          onClick={() => onDelete(catchItem.id)}
+          disabled={isDeleting}
+          className="bg-red-500 hover:bg-red-400 disabled:bg-slate-700 disabled:text-slate-400 text-white px-4 py-2 rounded-lg transition-colors disabled:cursor-not-allowed"
+        >
+          {isDeleting ? "Sletter..." : "Slet"}
+        </button>
+      </div>
     </div>
   );
 }

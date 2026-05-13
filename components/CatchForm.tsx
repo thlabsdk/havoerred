@@ -27,6 +27,8 @@ type CatchFormProps = {
   isEditing: boolean;
 
   isSaving: boolean;
+
+  isDisabled?: boolean;
 };
 
 const validateDate = (dateStr: string): string | undefined => {
@@ -75,6 +77,10 @@ const validateForm = (
 
   if (!location.trim()) {
     errors.location = 'Sted er påkrævet';
+  } else if (location.trim().length < 2) {
+    errors.location = 'Sted skal være mindst 2 tegn';
+  } else if (location.length > 100) {
+    errors.location = 'Sted kan ikke være længere end 100 tegn';
   }
 
   if (!bait.trim()) {
@@ -100,8 +106,17 @@ export default function CatchForm({
   onSubmit,
   isEditing,
   isSaving,
+  isDisabled = false,
 }: CatchFormProps) {
   const [errors, setErrors] = useState<ValidationErrors>({});
+
+  const clearFieldError = (fieldName: keyof ValidationErrors) => {
+    setErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[fieldName];
+      return updated;
+    });
+  };
 
   const hasErrors = (validationErrors: ValidationErrors): boolean => {
     return Object.keys(validationErrors).length > 0;
@@ -132,14 +147,15 @@ export default function CatchForm({
         <input
           type="text"
           value={date}
+          disabled={isDisabled}
           onChange={(e) => {
             setDate(e.target.value);
             if (errors.date) {
-              setErrors((prev) => ({ ...prev, date: undefined }));
+              clearFieldError('date');
             }
           }}
           placeholder="dd/mm/yyyy"
-          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors ${
+          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
             errors.date
               ? 'border-red-500 focus:ring-red-500'
               : 'border-slate-700 focus:ring-cyan-500'
@@ -158,14 +174,15 @@ export default function CatchForm({
         <input
           type="text"
           value={location}
+          disabled={isDisabled}
           onChange={(e) => {
             setLocation(e.target.value);
             if (errors.location) {
-              setErrors((prev) => ({ ...prev, location: undefined }));
+              clearFieldError('location');
             }
           }}
           placeholder="Fx Kyndby"
-          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors ${
+          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
             errors.location
               ? 'border-red-500 focus:ring-red-500'
               : 'border-slate-700 focus:ring-cyan-500'
@@ -184,14 +201,15 @@ export default function CatchForm({
         <input
           type="text"
           value={bait}
+          disabled={isDisabled}
           onChange={(e) => {
             setBait(e.target.value);
             if (errors.bait) {
-              setErrors((prev) => ({ ...prev, bait: undefined }));
+              clearFieldError('bait');
             }
           }}
           placeholder="Fx Bombarda med Kobberbassen"
-          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors ${
+          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
             errors.bait
               ? 'border-red-500 focus:ring-red-500'
               : 'border-slate-700 focus:ring-cyan-500'
@@ -209,14 +227,15 @@ export default function CatchForm({
 
         <textarea
           value={notes}
+          disabled={isDisabled}
           onChange={(e) => {
             setNotes(e.target.value);
             if (errors.notes) {
-              setErrors((prev) => ({ ...prev, notes: undefined }));
+              clearFieldError('notes');
             }
           }}
           placeholder="Beskriv forholdene..."
-          className={`w-full bg-slate-800 border rounded-xl p-3 h-32 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors ${
+          className={`w-full bg-slate-800 border rounded-xl p-3 h-32 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
             errors.notes
               ? 'border-red-500 focus:ring-red-500'
               : 'border-slate-700 focus:ring-cyan-500'

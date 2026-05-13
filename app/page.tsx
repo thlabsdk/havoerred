@@ -27,29 +27,38 @@ export default function HomePage() {
   const [hydrated, setHydrated] =
     useState(false);
 
-  const [catches, setCatches] = useState<
-    Catch[]
-  >([]);
+  const [isLoading, setIsLoading] =
+    useState(true);
 
+  const [deletingId, setDeletingId] =
+    useState<number | null>(null);
+
+  const [catches, setCatches] = useState<
+    Catch[]>([]);
+
+    
   useEffect(() => {
     async function loadCatches() {
-      const { data, error } = await supabase
-        .from("catches")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
+      try {
+        const { data, error } = await supabase
+          .from("catches")
+          .select("*")
+          .order("created_at", {
+            ascending: false,
+          });
 
-      if (error) {
-        console.error(error);
-        return;
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        if (data) {
+          setCatches(data as Catch[]);
+        }
+      } finally {
+        setHydrated(true);
+        setIsLoading(false);
       }
-
-      if (data) {
-        setCatches(data as Catch[]);
-      }
-
-      setHydrated(true);
     }
 
     loadCatches();
@@ -134,21 +143,27 @@ export default function HomePage() {
   }
 
   async function deleteCatch(id: number) {
-    const { error } = await supabase
-      .from("catches")
-      .delete()
-      .eq("id", id);
+    setDeletingId(id);
+    
+    try {
+      const { error } = await supabase
+        .from("catches")
+        .delete()
+        .eq("id", id);
 
-    if (error) {
-      console.error(error);
-      return;
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setCatches(
+        catches.filter(
+          (catchItem) => catchItem.id !== id
+        )
+      );
+    } finally {
+      setDeletingId(null);
     }
-
-    setCatches(
-      catches.filter(
-        (catchItem) => catchItem.id !== id
-      )
-    );
   }
   
 
@@ -169,7 +184,24 @@ export default function HomePage() {
   );
 
   if (!hydrated) {
-    return null;
+    return (
+      <main className="min-h-screen bg-slate-950 text-white p-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="h-20 bg-slate-900 rounded-2xl mb-6 animate-pulse" />
+          <div className="h-16 bg-slate-900 rounded-2xl mb-6 animate-pulse" />
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 mb-8">
+            <div className="h-10 bg-slate-800 rounded mb-4 animate-pulse" />
+            <div className="h-32 bg-slate-800 rounded mb-6 animate-pulse" />
+            <div className="h-12 bg-slate-800 rounded animate-pulse" />
+          </div>
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-32 bg-slate-900 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -211,6 +243,7 @@ export default function HomePage() {
             onSubmit={handleSubmit}
             isEditing={editingId !== null}
             isSaving={isSaving}
+            isDisabled={isSaving}
           />
         </div>
 
@@ -222,6 +255,7 @@ export default function HomePage() {
                 catchItem={catchItem}
                 onDelete={deleteCatch}
                 onEdit={editCatch}
+                isDeleting={deletingId === catchItem.id}
               />
             )
           )}
