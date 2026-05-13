@@ -1,10 +1,4 @@
-type Catch = {
-  id: number;
-  date: string;
-  location: string;
-  bait: string;
-  notes: string;
-};
+import { Catch } from "../types/catch";
 
 type StatsCardsProps = {
   catches: Catch[];

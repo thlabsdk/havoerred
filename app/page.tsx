@@ -150,6 +150,7 @@ export default function HomePage() {
       )
     );
   }
+  
 
   const filteredCatches = catches.filter(
     (catchItem) => {
@@ -208,9 +209,7 @@ export default function HomePage() {
             notes={notes}
             setNotes={setNotes}
             onSubmit={handleSubmit}
-            isEditing={
-              editingId !== null
-            }
+            isEditing={editingId !== null}
             isSaving={isSaving}
           />
         </div>
