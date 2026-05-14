@@ -277,6 +277,88 @@ export default function HomePage() {
     URL.revokeObjectURL(url);
   }
 
+  async function importCatches() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json,application/json';
+
+    fileInput.onchange = async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const fileContent = await file.text();
+        const parsedData = JSON.parse(fileContent);
+
+        // Handle both direct array format and export format
+        const catchesToImport = Array.isArray(parsedData)
+          ? parsedData
+          : parsedData.catches || [];
+
+        if (!Array.isArray(catchesToImport)) {
+          console.error('Invalid JSON format: expected array of catches');
+          return;
+        }
+
+        const validCatches = [];
+        const failedCatches = [];
+
+        // Validate each catch
+        for (let i = 0; i < catchesToImport.length; i++) {
+          const catchData = catchesToImport[i];
+          const validation = catchSchema.safeParse(catchData);
+
+          if (validation.success) {
+            validCatches.push(catchData);
+          } else {
+            failedCatches.push({
+              index: i,
+              data: catchData,
+              errors: validation.error.issues,
+            });
+          }
+        }
+
+        if (failedCatches.length > 0) {
+          console.warn(
+            `${failedCatches.length} invalid entries skipped:`,
+            failedCatches
+          );
+        }
+
+        if (validCatches.length === 0) {
+          console.error('No valid catches to import');
+          return;
+        }
+
+        // Insert valid catches into Supabase
+        const insertPayloads = validCatches.map(
+          toCatchInsertPayload
+        );
+
+        const { data, error } = await supabase
+          .from('catches')
+          .insert(insertPayloads)
+          .select();
+
+        if (error) {
+          console.error('Failed to import catches:', formatSupabaseError(error));
+          return;
+        }
+
+        if (data) {
+          const newCatches = (data as CatchFromDB[]).map(mapCatchFromDb);
+          setCatches([...newCatches, ...catches]);
+          console.log(`Successfully imported ${newCatches.length} catches`);
+        }
+      } catch (err) {
+        console.error('Error importing catches:', err);
+      }
+    };
+
+    fileInput.click();
+  }
+
   if (!hydrated) {
     return (
       <main className="min-h-screen bg-slate-950 text-white p-8">
@@ -321,6 +403,15 @@ export default function HomePage() {
             className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-3 rounded-2xl transition-colors font-semibold"
           >
             Export fangster
+          </button>
+        </div>
+
+        <div className="mb-6">
+          <button
+            onClick={importCatches}
+            className="w-full bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-2xl transition-colors font-semibold"
+          >
+            Import fangster
           </button>
         </div>
 
