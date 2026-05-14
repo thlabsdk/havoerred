@@ -11,6 +11,8 @@ import {
   CatchFromDB,
 } from "../types/catch";
 
+import type { Spot } from "../types/spot";
+
 import {
   mapCatchFromDb,
   toCatchInsertPayload,
@@ -18,6 +20,8 @@ import {
 } from "../lib/catch_mappers";
 
 import { catchSchema, type CatchFormData } from "../lib/catch-schema";
+
+import { fetchSpots, createSpot } from "../lib/spots_repo";
 
 import { supabase } from "../lib/supabase";
 
@@ -30,6 +34,9 @@ export default function HomePage() {
   const [undersized, setUndersized] = useState(false);
   const [windDirection, setWindDirection] = useState("");
   const [notes, setNotes] = useState("");
+  const [spotId, setSpotId] = useState<number | null>(null);
+
+  const [spots, setSpots] = useState<Spot[]>([]);
 
   const [search, setSearch] = useState("");
 
@@ -82,35 +89,59 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    async function loadCatches() {
+    async function loadInitialData() {
       try {
-        const { data, error } = await supabase
-          .from("catches")
-          .select("*")
-          .order("created_at", {
-            ascending: false,
-          });
+        const [catchesResult, spotsResult] = await Promise.allSettled([
+          supabase
+            .from("catches")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          fetchSpots(),
+        ]);
 
-        if (error) {
-          console.error(
-            "Failed to load catches:",
-            formatSupabaseError(error)
-          );
-          return;
+        if (catchesResult.status === 'fulfilled') {
+          const { data, error } = catchesResult.value;
+          if (error) {
+            console.error("Failed to load catches:", formatSupabaseError(error));
+          } else if (data) {
+            setCatches((data as CatchFromDB[]).map(mapCatchFromDb));
+          }
+        } else {
+          console.error("Failed to load catches:", catchesResult.reason);
         }
 
-        if (data) {
-          setCatches(
-            (data as CatchFromDB[]).map(mapCatchFromDb)
-          );
+        if (spotsResult.status === 'fulfilled') {
+          setSpots(spotsResult.value);
+        } else {
+          console.error("Failed to load spots:", spotsResult.reason);
         }
       } finally {
         setHydrated(true);
       }
     }
 
-    loadCatches();
+    loadInitialData();
   }, []);
+
+  async function handleCreateSpot(name: string, bodyOfWater: string): Promise<Spot | null> {
+    try {
+      const newSpot = await createSpot({
+        name,
+        aliases: [],
+        bodyOfWater,
+        latitude: null,
+        longitude: null,
+        region: '',
+        notes: '',
+      });
+      setSpots((prev) => [...prev, newSpot].sort((a, b) => a.name.localeCompare(b.name)));
+      return newSpot;
+    } catch (err) {
+      console.error('Failed to create spot:', formatSupabaseError(err));
+      setImportMessage({ text: 'Kunne ikke oprette sted', type: 'error' });
+      return null;
+    }
+  }
 
   async function handleSubmit(
     e: React.FormEvent
@@ -127,6 +158,7 @@ export default function HomePage() {
       undersized,
       windDirection,
       notes,
+      spotId,
     };
 
     const validation = catchSchema.safeParse(formData);
@@ -148,6 +180,7 @@ export default function HomePage() {
         undersized,
         windDirection,
         notes,
+        spotId,
       });
 
       const { data, error } = await supabase
@@ -185,6 +218,7 @@ export default function HomePage() {
         undersized,
         windDirection,
         notes,
+        spotId,
       });
 
       const { data, error } = await supabase
@@ -218,6 +252,7 @@ export default function HomePage() {
     setUndersized(false);
     setWindDirection("");
     setNotes("");
+    setSpotId(null);
   }
 
   function editCatch(catchItem: Catch) {
@@ -231,6 +266,7 @@ export default function HomePage() {
     setUndersized(catchItem.undersized);
     setWindDirection(catchItem.windDirection);
     setNotes(catchItem.notes);
+    setSpotId(catchItem.spotId);
   }
 
   async function deleteCatch(id: number) {
@@ -572,6 +608,7 @@ export default function HomePage() {
     setUndersized(aiParsedResult.undersized || false);
     setWindDirection(aiParsedResult.windDirection || '');
     setNotes(aiParsedResult.notes || '');
+    setSpotId(aiParsedResult.spotId ?? null);
 
     setAiParsedResult(null);
     setAiDescription("");
@@ -687,6 +724,10 @@ export default function HomePage() {
             setWindDirection={setWindDirection}
             notes={notes}
             setNotes={setNotes}
+            spotId={spotId}
+            setSpotId={setSpotId}
+            spots={spots}
+            onCreateSpot={handleCreateSpot}
             onSubmit={handleSubmit}
             isEditing={editingId !== null}
             isSaving={isSaving}

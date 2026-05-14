@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir \"C:\\\\Users\\\\troel\\\\havorred-log\\\\node_modules\\\\next\\\\dist\\\\docs\")"
+      "Bash(dir \"C:\\\\Users\\\\troel\\\\havorred-log\\\\node_modules\\\\next\\\\dist\\\\docs\")",
+      "PowerShell(npm run *)",
+      "PowerShell(npx tsc --noEmit 2>&1)"
     ]
   }
 }

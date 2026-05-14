@@ -10,6 +10,7 @@ const validInput = {
   undersized: false,
   windDirection: 'NW',
   notes: 'overcast',
+  spotId: 7,
 };
 
 describe('catchSchema', () => {
@@ -69,6 +70,31 @@ describe('catchSchema', () => {
 
   it('rejects non-boolean undersized', () => {
     const r = catchSchema.safeParse({ ...validInput, undersized: 'no' });
+    expect(r.success).toBe(false);
+  });
+
+  it('accepts null spotId', () => {
+    const r = catchSchema.safeParse({ ...validInput, spotId: null });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.spotId).toBeNull();
+  });
+
+  it('accepts numeric spotId', () => {
+    const r = catchSchema.safeParse({ ...validInput, spotId: 12 });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.spotId).toBe(12);
+  });
+
+  it('treats missing spotId as null (legacy JSON imports)', () => {
+    const { spotId: _omit, ...legacy } = validInput;
+    void _omit;
+    const r = catchSchema.safeParse(legacy);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.spotId).toBeNull();
+  });
+
+  it('rejects non-integer spotId', () => {
+    const r = catchSchema.safeParse({ ...validInput, spotId: 3.14 });
     expect(r.success).toBe(false);
   });
 });

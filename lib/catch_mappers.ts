@@ -11,6 +11,7 @@ export function mapCatchFromDb(catchRow: CatchFromDB): Catch {
     undersized: catchRow.undersized,
     windDirection: catchRow.wind_direction ?? '',
     notes: catchRow.notes,
+    spotId: catchRow.spot_id ?? null,
     createdAt: catchRow.created_at,
     updatedAt: catchRow.updated_at,
   };
@@ -26,6 +27,7 @@ export function toCatchInsertPayload(catchData: CatchInsert) {
     undersized: catchData.undersized,
     wind_direction: catchData.windDirection || null,
     notes: catchData.notes,
+    spot_id: catchData.spotId ?? null,
   };
 }
 
@@ -62,6 +64,10 @@ export function toCatchUpdatePayload(catchData: CatchUpdate) {
 
   if (catchData.notes !== undefined) {
     payload.notes = catchData.notes;
+  }
+
+  if (catchData.spotId !== undefined) {
+    payload.spot_id = catchData.spotId;
   }
 
   return payload;

@@ -1,4 +1,4 @@
-﻿export type Catch = {
+export type Catch = {
   id: number;
   date: string;
   location: string;
@@ -8,6 +8,7 @@
   undersized: boolean;
   windDirection: string;
   notes: string;
+  spotId: number | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -22,6 +23,7 @@ export type CatchFromDB = {
   undersized: boolean;
   wind_direction: string | null;
   notes: string;
+  spot_id: number | null;
   created_at: string;
   updated_at: string;
 };

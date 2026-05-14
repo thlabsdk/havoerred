@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { catchSchema } from '@/lib/catch-schema';
+import { fetchSpots } from '@/lib/spots_repo';
+import type { Spot } from '@/types/spot';
 
 const SEA_TROUT_LEGAL_MIN_CM = 40;
 
@@ -13,6 +15,18 @@ const debugLog = (...args: unknown[]) => {
   if (debugEnabled()) {
     console.log(...args);
   }
+};
+
+const formatSpotsForPrompt = (spots: Spot[]): string => {
+  if (spots.length === 0) return 'NONE';
+  return JSON.stringify(
+    spots.map((s) => ({
+      id: s.id,
+      name: s.name,
+      aliases: s.aliases,
+      bodyOfWater: s.bodyOfWater || undefined,
+    }))
+  );
 };
 
 export async function POST(request: NextRequest) {
@@ -46,6 +60,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let spots: Spot[] = [];
+    try {
+      spots = await fetchSpots();
+    } catch (spotsError) {
+      console.error('Failed to fetch spots for AI prompt; proceeding without spot context:', spotsError);
+    }
+    const validSpotIds = new Set(spots.map((s) => s.id));
+
     const systemPrompt = `You are a Danish fishing log assistant. Parse the user's natural language description of a sea trout catch and extract the information.
 
 Return ONE JSON object with EXACTLY these fields. Use the empty string "" for unknown text fields. NEVER use null for text fields.
@@ -58,6 +80,10 @@ Return ONE JSON object with EXACTLY these fields. Use the empty string "" for un
 - undersized: boolean. Will be re-derived from length on the server — set to false if you are unsure.
 - windDirection: 8-point compass abbreviation in English (N, NE, E, SE, S, SW, W, NW), or "" if not mentioned. Normalize Danish ("nordvest" -> "NW", "sydøst" -> "SE", etc.).
 - notes: string, any extra detail worth keeping. "" if nothing notable.
+- spotId: number or null. The id of the matching known spot if the description clearly references one of the user's spots below; otherwise null.
+
+KNOWN SPOTS (canonical name + aliases). If the description names one of these spots (by canonical name, alias, or close variant), set spotId to its id and set location to the canonical name. Otherwise set spotId to null.
+${formatSpotsForPrompt(spots)}
 
 Respond with ONLY the JSON object. No prose, no markdown fences.`;
 
@@ -76,6 +102,7 @@ Respond with ONLY the JSON object. No prose, no markdown fences.`;
     debugLog('OpenAI request payload:', {
       model: openAiRequestPayload.model,
       temperature: openAiRequestPayload.temperature,
+      spotCount: spots.length,
       messages: openAiRequestPayload.messages.map((m) => ({ role: m.role, content: m.content })),
     });
 
@@ -124,8 +151,14 @@ Respond with ONLY the JSON object. No prose, no markdown fences.`;
       );
     }
 
+    const resolvedSpotId =
+      validation.data.spotId != null && validSpotIds.has(validation.data.spotId)
+        ? validation.data.spotId
+        : null;
+
     const result = {
       ...validation.data,
+      spotId: resolvedSpotId,
       undersized:
         validation.data.lengthCm != null && validation.data.lengthCm < SEA_TROUT_LEGAL_MIN_CM,
     };

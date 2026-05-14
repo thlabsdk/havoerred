@@ -5,52 +5,70 @@
 - Next.js 16 application scaffolded
 - Supabase client integrated
 - `catches` table created and mapped to frontend models
-- JSON import pipeline implemented
+- JSON import/export pipeline implemented
 - Basic catch CRUD workflows available
 - OpenAI parse route and AI parsing flow added
-- Observability improvements for AI parsing and API errors
+- **Phase 0 — foundations**:
+  - `.env.example` documented
+  - Vitest set up with mapper + schema coverage
+  - AI route hardened: `response_format: json_object`, deterministic
+    `undersized`, `lengthCm` coercion, date format validation, prompt/schema
+    null-vs-empty contract reconciled, model configurable via
+    `OPENAI_PARSE_MODEL`, verbose logs gated behind `DEBUG_AI_PARSE`,
+    dropped the `as any` cast
+- **Phase 2 — spot registry**:
+  - `spots` table with canonical name + aliases + body of water + lat/lng + owner
+  - `catches.spot_id` FK
+  - `SpotPicker` UI + create-from-text flow
+  - AI prompt now receives the user's spots and resolves matches to `spotId`
+  - Defensive id validation against hallucinated ids
+  - Test coverage for spot mappers + spotId behavior in catch schema/mappers
 
-## Current AI parsing work
+## Skipped/deferred
 
-- Improving frontend and backend error visibility
-- Logging request payloads, OpenAI responses, and validation failures
-- Returning structured errors instead of empty objects
-- Ensuring `OPENAI_API_KEY` is checked and surfaced clearly
+- **Phase 1 — page split** was skipped. `app/page.tsx` is still monolithic.
+  This will bite as Phase 3+ add more state; revisit when the modal count grows.
 
 ## Upcoming features
 
-- Enrichment pipeline for catch metadata
-- User authentication and role-based access
-- Analytics dashboards for catch trends
-- Map-based catch visualization
-- AI-assisted catch enrichment and suggestion tools
+- Phase 3 — enrichment pipeline (DMI weather for catch date + spot lat/lng)
+- Phase 4 — map-based catch visualization
+- Phase 5 — auth + RLS
+- Phase 6 — analytics dashboards + AI assistance over your own log
 
-## Planned enrichment pipeline
+## Phase 3 — enrichment pipeline (next)
 
-- Add a secondary parse or classification step for catch details
-- Enhance catches with weather, location, and bait context
-- Store enrichment flags or augmented metadata in the database
+- Add `enrichment_status` column on `catches` (`pending | enriched | failed`)
+- New `/api/enrich-catch` route that takes a `catchId`, looks up the spot's
+  lat/lng, queries DMI for weather at the catch's date, patches the row
+- Fire from the client immediately after insert (fire-and-forget) and on
+  any page load that finds `pending` rows older than N minutes
+- Per-source columns: `weather_temp_c`, `weather_wind_dir`, `weather_wind_ms`,
+  `weather_source`, `weather_fetched_at`
+- UI: small enrichment pill on `CatchCard`
 
-## Auth
+## Phase 4 — maps
 
-- Add user sign-in through Supabase Auth or a custom auth layer
-- Enable per-user catch history and access controls
-- Protect import and AI parsing routes behind authentication
+- Geocode spots that lack lat/lng (manual entry first, then a lookup service)
+- Leaflet or MapLibre map view rendering `spots` with catch markers
+- Filter by date range / bait / undersized
 
-## Analytics
+## Phase 5 — auth + RLS
 
-- Build usage and catch metrics
-- Track catch counts, undersized ratios, location popularity, and bait success
-- Add charts or reports in the admin UI
+- Supabase Auth (email + Google)
+- Populate `owner_user_id` on `spots` and `catches`
+- RLS policies (owner-only read/write)
+- Auth-protect `/api/parse-catch` and `/api/enrich-catch`
 
-## Maps
+## Phase 6 — analytics + AI assistance
 
-- Add geolocation or map pinning for catch locations
-- Show catches on an interactive map view
-- Support location-based filtering and region summaries
+- Dashboards reading from `spots` + enriched `catches`
+- Catch counts, undersized ratios, spot popularity, bait success by conditions
+- "Ask your log" — RAG over your own catches using the entity tables
 
-## AI-assisted catch enrichment
+## Cross-cutting
 
-- Use AI to suggest missing fields, clean descriptions, or classify conditions
-- Integrate enrichment into the import workflow
-- Add a review step for AI-suggested values before saving
+- Re-tackle the `app/page.tsx` split (Phase 1) when complexity demands
+- Bait registry (mirror of spots) for Phase 6 analytics quality
+- Image upload for catches
+- Mobile shell

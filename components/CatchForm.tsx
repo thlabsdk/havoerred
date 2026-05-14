@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import type { Spot } from '../types/spot';
+import SpotPicker from './SpotPicker';
 
 type ValidationErrors = {
   date?: string;
@@ -33,6 +35,13 @@ type CatchFormProps = {
 
   notes: string;
   setNotes: (value: string) => void;
+
+  spotId: number | null;
+  setSpotId: (value: number | null) => void;
+
+  spots: Spot[];
+
+  onCreateSpot: (name: string, bodyOfWater: string) => Promise<Spot | null>;
 
   onSubmit: (e: React.FormEvent) => void;
 
@@ -123,6 +132,10 @@ export default function CatchForm({
   setWindDirection,
   notes,
   setNotes,
+  spotId,
+  setSpotId,
+  spots,
+  onCreateSpot,
   onSubmit,
   isEditing,
   isSaving,
@@ -186,9 +199,25 @@ export default function CatchForm({
         )}
       </div>
 
+      <SpotPicker
+        spots={spots}
+        selectedSpotId={spotId}
+        onChange={(id, name) => {
+          setSpotId(id);
+          if (name) {
+            setLocation(name);
+            if (errors.location) clearFieldError('location');
+          }
+        }}
+        currentLocationText={location}
+        currentFjordText={fjord}
+        onCreateSpot={onCreateSpot}
+        isDisabled={isDisabled}
+      />
+
       <div>
         <label className="block mb-2 text-sm font-semibold text-slate-300">
-          Sted
+          Sted (fritekst)
         </label>
 
         <input
@@ -197,6 +226,7 @@ export default function CatchForm({
           disabled={isDisabled}
           onChange={(e) => {
             setLocation(e.target.value);
+            if (spotId !== null) setSpotId(null);
             if (errors.location) {
               clearFieldError('location');
             }
