@@ -256,6 +256,27 @@ export default function HomePage() {
     }
   );
 
+  function exportCatches() {
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      totalCatches: catches.length,
+      catches: catches,
+    };
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'havorredloggen-export.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  }
+
   if (!hydrated) {
     return (
       <main className="min-h-screen bg-slate-950 text-white p-8">
@@ -292,6 +313,15 @@ export default function HomePage() {
             placeholder="Søg efter sted eller agn..."
             className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           />
+        </div>
+
+        <div className="mb-6">
+          <button
+            onClick={exportCatches}
+            className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-3 rounded-2xl transition-colors font-semibold"
+          >
+            Export fangster
+          </button>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 mb-8">
