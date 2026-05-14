@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OpenAI } from 'openai';
+import OpenAI from 'openai';
 import { catchSchema } from '@/lib/catch-schema';
+
+const SEA_TROUT_LEGAL_MIN_CM = 40;
+
+const debugEnabled = () => {
+  const v = process.env.DEBUG_AI_PARSE;
+  return v === '1' || v === 'true';
+};
+
+const debugLog = (...args: unknown[]) => {
+  if (debugEnabled()) {
+    console.log(...args);
+  }
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,96 +28,90 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const model = process.env.OPENAI_PARSE_MODEL ?? 'gpt-4o-mini';
 
     const requestBody = await request.json();
-    console.log('Incoming parse-catch request body:', requestBody);
+    debugLog('Incoming parse-catch request body:', requestBody);
 
     const { description } = requestBody;
 
     if (!description || typeof description !== 'string' || !description.trim()) {
       return NextResponse.json(
-        { error: 'Description is required', details: 'The request body must include a non-empty description string.' },
+        {
+          error: 'Description is required',
+          details: 'The request body must include a non-empty description string.',
+        },
         { status: 400 }
       );
     }
 
-    const systemPrompt = `You are a Danish fishing log assistant. Parse the user's natural language description of a fish catch and extract the relevant information.
+    const systemPrompt = `You are a Danish fishing log assistant. Parse the user's natural language description of a sea trout catch and extract the information.
 
-Return a JSON object with these fields:
-- date: string (dd/mm/yyyy format) - leave empty if not provided
-- location: string (fishing location/spot name)
-- fjord: string (name of fjord) - leave empty if not mentioned
-- bait: string (type of bait used)
-- lengthCm: number | null (fish length in cm)
-- undersized: boolean (whether fish was undersized)
-- windDirection: string (wind direction if mentioned) - leave empty if not mentioned
-- notes: string (any additional notes about the catch)
+Return ONE JSON object with EXACTLY these fields. Use the empty string "" for unknown text fields. NEVER use null for text fields.
 
-Only include information that can be inferred from the description. Use null or empty strings for unknown values.
-Respond ONLY with valid JSON, no additional text.`;
+- date: string in dd/mm/yyyy format, or "" if not given.
+- location: string, the fishing spot. REQUIRED. If the description does not name a spot, use "Ukendt".
+- fjord: string, the fjord/body of water, or "" if not mentioned.
+- bait: string, the bait used. REQUIRED. If not given, use "Ukendt".
+- lengthCm: integer length in cm, or null if not given. Strip any unit text.
+- undersized: boolean. Will be re-derived from length on the server — set to false if you are unsure.
+- windDirection: 8-point compass abbreviation in English (N, NE, E, SE, S, SW, W, NW), or "" if not mentioned. Normalize Danish ("nordvest" -> "NW", "sydøst" -> "SE", etc.).
+- notes: string, any extra detail worth keeping. "" if nothing notable.
 
-    const userMessage = `Parse this catch description and extract the information:
+Respond with ONLY the JSON object. No prose, no markdown fences.`;
 
-${description}`;
+    const userMessage = `Parse this catch description:\n\n${description}`;
 
     const openAiRequestPayload = {
-      model: 'gpt-4o-mini',
+      model,
       messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: userMessage,
-        },
+        { role: 'system' as const, content: systemPrompt },
+        { role: 'user' as const, content: userMessage },
       ],
       temperature: 0.3,
+      response_format: { type: 'json_object' as const },
     };
 
-    console.log('OpenAI request payload:', {
+    debugLog('OpenAI request payload:', {
       model: openAiRequestPayload.model,
       temperature: openAiRequestPayload.temperature,
-      messages: openAiRequestPayload.messages.map((message) => ({ role: message.role, content: message.content })),
+      messages: openAiRequestPayload.messages.map((m) => ({ role: m.role, content: m.content })),
     });
 
-    const completion = await openai.chat.completions.create(openAiRequestPayload as any);
-    console.log('Raw OpenAI response:', completion);
+    const completion = await openai.chat.completions.create(openAiRequestPayload);
+    debugLog('Raw OpenAI response:', completion);
 
     const responseText = completion.choices?.[0]?.message?.content;
-    console.log('OpenAI response text:', responseText);
+    debugLog('OpenAI response text:', responseText);
 
     if (!responseText) {
       return NextResponse.json(
-        { error: 'Failed to get response from OpenAI', details: 'OpenAI returned no message content.' },
+        {
+          error: 'Failed to get response from OpenAI',
+          details: 'OpenAI returned no message content.',
+        },
         { status: 500 }
       );
     }
 
-    let parsedData;
+    let parsedData: unknown;
     try {
       parsedData = JSON.parse(responseText);
-      console.log('Parsed OpenAI JSON:', parsedData);
+      debugLog('Parsed OpenAI JSON:', parsedData);
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', {
         responseText,
         parseError: parseError instanceof Error ? parseError.message : String(parseError),
-        stack: parseError instanceof Error ? parseError.stack : undefined,
       });
       return NextResponse.json(
-        {
-          error: 'Invalid JSON response from AI',
-          details: responseText,
-        },
+        { error: 'Invalid JSON response from AI', details: responseText },
         { status: 500 }
       );
     }
 
     const validation = catchSchema.safeParse(parsedData);
-    console.log('Zod validation result:', validation.success ? 'success' : validation.error.issues);
+    debugLog('Zod validation result:', validation.success ? 'success' : validation.error.issues);
 
     if (!validation.success) {
       console.error('Validation errors:', validation.error.issues);
@@ -117,24 +124,22 @@ ${description}`;
       );
     }
 
-    return NextResponse.json(validation.data);
+    const result = {
+      ...validation.data,
+      undersized:
+        validation.data.lengthCm != null && validation.data.lengthCm < SEA_TROUT_LEGAL_MIN_CM,
+    };
+
+    return NextResponse.json(result);
   } catch (error) {
     const isError = error instanceof Error;
     const message = isError ? error.message : String(error);
     const stack = isError ? error.stack : undefined;
 
-    console.error('Error parsing catch:', {
-      message,
-      stack,
-      error,
-    });
+    console.error('Error parsing catch:', { message, stack });
 
     return NextResponse.json(
-      {
-        error: 'AI parsing failed',
-        details: message,
-        stack,
-      },
+      { error: 'AI parsing failed', details: message },
       { status: 500 }
     );
   }

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"C:\\\\Users\\\\troel\\\\havorred-log\\\\node_modules\\\\next\\\\dist\\\\docs\")"
+    ]
+  }
+}

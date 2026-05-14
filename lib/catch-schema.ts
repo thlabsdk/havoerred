@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { coerceLengthCm, optionalDateString } from './coerce';
 
 export const catchSchema = z.object({
-  date: z.string(),
+  date: optionalDateString,
   location: z.string().min(1, 'Location is required'),
   fjord: z.string(),
   bait: z.string().min(1, 'Bait is required'),
-  lengthCm: z.number().nullable(),
+  lengthCm: coerceLengthCm,
   undersized: z.boolean(),
   windDirection: z.string(),
   notes: z.string(),
