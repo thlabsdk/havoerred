@@ -120,16 +120,20 @@ ${description}`;
     return NextResponse.json(validation.data);
   } catch (error) {
     const isError = error instanceof Error;
+    const message = isError ? error.message : String(error);
+    const stack = isError ? error.stack : undefined;
+
     console.error('Error parsing catch:', {
-      message: isError ? error.message : String(error),
-      stack: isError ? error.stack : undefined,
+      message,
+      stack,
       error,
     });
 
     return NextResponse.json(
       {
-        error: 'Internal server error',
-        details: isError ? error.message : String(error),
+        error: 'AI parsing failed',
+        details: message,
+        stack,
       },
       { status: 500 }
     );
