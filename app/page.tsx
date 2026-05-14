@@ -17,6 +17,8 @@ import {
   toCatchUpdatePayload,
 } from "../lib/catch_mappers";
 
+import { catchSchema } from "../lib/catch-schema";
+
 import { supabase } from "../lib/supabase";
 
 export default function HomePage() {
@@ -93,6 +95,25 @@ export default function HomePage() {
     e: React.FormEvent
   ) {
     e.preventDefault();
+
+    // Validate form data
+    const formData = {
+      date,
+      location,
+      fjord,
+      bait,
+      lengthCm,
+      undersized,
+      windDirection,
+      notes,
+    };
+
+    const validation = catchSchema.safeParse(formData);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error.issues);
+      setIsSaving(false);
+      return;
+    }
 
     setIsSaving(true);
 
