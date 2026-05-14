@@ -10,13 +10,41 @@ resolve spot names instead of merely extracting them.
 
 ## Frontend structure
 
-- `app/page.tsx` is the main client component (still monolithic; split planned).
-- React state hooks own form fields, modals, search, edit state, catches list,
-  and the spot registry.
-- Subcomponents: `CatchForm` (controlled), `CatchCard`, `StatsCards`, and
-  `SpotPicker`.
-- UI render is gated by `hydrated` to avoid hydration mismatches.
-- Initial load fetches `catches` and `spots` in parallel via `Promise.allSettled`.
+`app/page.tsx` is a slim coordinator: it owns the persisted state (`catches`,
+`spots`), the active tab, toast state, and the data-mutation callbacks that
+wrap Supabase calls. All UI lives in three view components selected by the
+tab nav.
+
+Three tabs separate UI concerns by domain:
+
+- **Fangster** (`components/CatchesView.tsx`) — single-catch operations. Form,
+  search, list, stats, AI parse modal. Form/AI/search state lives here.
+- **Bulk** (`components/BulkOpsView.tsx`) — bulk operations. Catch JSON export,
+  file-picker import, paste-JSON import. Designed to absorb future bulk
+  actions (re-enrich, bulk delete, etc.) without touching other views.
+- **Steder** (`components/SpotsView.tsx`) — spot management. List, create
+  (inline form), edit (modal), delete (confirmation modal), JSON export, paste
+  JSON import.
+
+Supporting components:
+
+- `Tabs.tsx` — 3-way tab nav.
+- `CatchForm.tsx` — fully-controlled catch entry form. Renders `SpotPicker`
+  above the location input.
+- `CatchCard.tsx`, `StatsCards.tsx` — catch display.
+- `SpotForm.tsx` — controlled spot create/edit form with aliases textarea
+  (one alias per line).
+- `SpotCard.tsx` — single-spot row display.
+- `SpotPicker.tsx` — dropdown of existing spots + "create from current text"
+  inline button, used inside `CatchForm`.
+
+UI render is gated by `hydrated` to avoid hydration mismatches. Initial load
+fetches `catches` and `spots` in parallel via `Promise.allSettled`.
+
+State flow: persisted lists live in `app/page.tsx`. Each view receives only
+the slice + callbacks it needs (props, not context). Local UI state (form
+fields, modals, search input) lives in the view that owns the UI element.
+This keeps the coordinator small and the views independently editable.
 
 ## Supabase integration
 
@@ -33,10 +61,17 @@ resolve spot names instead of merely extracting them.
 - Each catch may have a `spot_id` FK to a row in `spots`. The free-form
   `catches.location` text is preserved for back-compat and quick entry, but
   `spot_id` is the source of truth when set.
-- `lib/spots_repo.ts` exposes `fetchSpots()` and `createSpot()`.
-- `components/SpotPicker.tsx` is a dropdown + "create from current text"
-  control rendered above the location input in `CatchForm`.
-- Editing the location free-text clears `spotId` so the two stay consistent.
+- `lib/spots_repo.ts` exposes `fetchSpots`, `createSpot`, `updateSpot`,
+  `deleteSpot`.
+- `lib/spot-schema.ts` defines `spotSchema` used by the spot JSON import for
+  tolerant validation (defaults missing fields rather than rejecting whole
+  rows).
+- The Steder tab provides full CRUD + JSON import/export. Deleting a spot
+  uses `on delete set null` on `catches.spot_id` — existing catches keep
+  their free-text location.
+- `SpotPicker` inside `CatchForm` is a dropdown + "create from current text"
+  control. Editing the location free-text clears `spotId` so the two stay
+  consistent.
 
 ## API route architecture
 
@@ -68,14 +103,24 @@ resolve spot names instead of merely extracting them.
 
 ## Import/export pipeline
 
-- The frontend supports JSON import via a paste modal and a file picker, and
-  JSON export to a downloaded file.
-- Import flow:
-  1. User pastes JSON or picks a file.
-  2. The app parses the JSON and validates each entry against `catchSchema`.
-  3. Valid catches are inserted into Supabase via `supabase.from('catches').insert(...)`.
-  4. Invalid entries are skipped and reported.
-  5. The UI updates with the new rows.
+The catch and spot import/export flows share an architecture:
+
+- **Typed models** (`types/catch.ts`, `types/spot.ts`).
+- **Zod validation** at the import boundary (`catchSchema`, `spotSchema`).
+  Both schemas are tolerant — unknown rows in legacy JSON exports still
+  validate as long as required fields are present.
+- **Mapper layer** translates between camelCase frontend and snake_case DB.
+- **Tolerant import**: each row is validated independently; invalid rows are
+  logged and skipped, valid rows are inserted as a single batch.
+
+Catches: Bulk tab exposes JSON export, file-picker import, and paste-JSON
+import. Single-catch save lives on the Fangster tab.
+
+Spots: Steder tab exposes JSON export and paste-JSON import. Single-spot CRUD
+lives in the same tab.
+
+Both export formats nest under `{ exportDate, totalX, [items] }` but the
+importers also accept a bare top-level array for hand-edited input.
 
 ## AI parsing pipeline
 
@@ -108,4 +153,5 @@ are always on.
 - Coverage:
   - `lib/catch_mappers.test.ts` — round-trip + null/empty + spotId behavior
   - `lib/catch-schema.test.ts` — date format, length coercion, spotId optionality
-  - `lib/spot_mappers.test.ts` — spot mapping round-trip
+  - `lib/spot_mappers.test.ts` — spot mapping round-trip + update payload
+  - `lib/spot-schema.test.ts` — tolerant defaults, coord coercion, alias validation

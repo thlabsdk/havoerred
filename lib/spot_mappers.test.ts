@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mapSpotFromDb, toSpotInsertPayload } from './spot_mappers';
-import type { SpotFromDB, SpotInsert } from '../types/spot';
+import { mapSpotFromDb, toSpotInsertPayload, toSpotUpdatePayload } from './spot_mappers';
+import type { SpotFromDB, SpotInsert, SpotUpdate } from '../types/spot';
 
 const baseRow: SpotFromDB = {
   id: 1,
@@ -83,6 +83,38 @@ describe('toSpotInsertPayload', () => {
     const payload = toSpotInsertPayload({ ...baseInsert, bodyOfWater: '', region: '' });
     expect(payload.body_of_water).toBeNull();
     expect(payload.region).toBeNull();
+  });
+});
+
+describe('toSpotUpdatePayload', () => {
+  it('returns empty object when nothing is set', () => {
+    expect(toSpotUpdatePayload({} as SpotUpdate)).toEqual({});
+  });
+
+  it('only includes explicitly-set fields and snake_cases keys', () => {
+    expect(toSpotUpdatePayload({ name: 'New', bodyOfWater: 'Kattegat' })).toEqual({
+      name: 'New',
+      body_of_water: 'Kattegat',
+    });
+  });
+
+  it('preserves explicit null lat/lng (clearing geo)', () => {
+    expect(toSpotUpdatePayload({ latitude: null, longitude: null })).toEqual({
+      latitude: null,
+      longitude: null,
+    });
+  });
+
+  it('nulls empty bodyOfWater, region, notes', () => {
+    expect(toSpotUpdatePayload({ bodyOfWater: '', region: '', notes: '' })).toEqual({
+      body_of_water: null,
+      region: null,
+      notes: null,
+    });
+  });
+
+  it('replaces aliases array', () => {
+    expect(toSpotUpdatePayload({ aliases: ['a', 'b'] })).toEqual({ aliases: ['a', 'b'] });
   });
 });
 

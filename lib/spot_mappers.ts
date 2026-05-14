@@ -1,4 +1,4 @@
-import type { Spot, SpotFromDB, SpotInsert } from '../types/spot';
+import type { Spot, SpotFromDB, SpotInsert, SpotUpdate } from '../types/spot';
 
 export function mapSpotFromDb(row: SpotFromDB): Spot {
   return {
@@ -26,4 +26,18 @@ export function toSpotInsertPayload(spot: SpotInsert) {
     region: spot.region || null,
     notes: spot.notes || null,
   };
+}
+
+export function toSpotUpdatePayload(spot: SpotUpdate) {
+  const payload: Record<string, unknown> = {};
+
+  if (spot.name !== undefined) payload.name = spot.name;
+  if (spot.aliases !== undefined) payload.aliases = spot.aliases;
+  if (spot.bodyOfWater !== undefined) payload.body_of_water = spot.bodyOfWater || null;
+  if (spot.latitude !== undefined) payload.latitude = spot.latitude;
+  if (spot.longitude !== undefined) payload.longitude = spot.longitude;
+  if (spot.region !== undefined) payload.region = spot.region || null;
+  if (spot.notes !== undefined) payload.notes = spot.notes || null;
+
+  return payload;
 }

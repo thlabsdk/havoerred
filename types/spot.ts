@@ -27,3 +27,5 @@ export type SpotFromDB = {
 };
 
 export type SpotInsert = Omit<Spot, 'id' | 'createdAt' | 'updatedAt' | 'ownerUserId'>;
+
+export type SpotUpdate = Partial<SpotInsert>;

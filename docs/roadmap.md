@@ -26,8 +26,25 @@
 
 ## Skipped/deferred
 
-- **Phase 1 — page split** was skipped. `app/page.tsx` is still monolithic.
-  This will bite as Phase 3+ add more state; revisit when the modal count grows.
+- **Phase 1 — page split**: largely addressed by the UI architecture refactor
+  (see below). `app/page.tsx` is now a slim coordinator owning persisted state
+  and CRUD callbacks only; modals and form state moved into per-tab views.
+
+## UI architecture refactor (done)
+
+Concern separation by domain, no heavy admin framework, no new routing:
+
+- Three tabs: **Fangster** (single-catch), **Bulk** (catch import/export),
+  **Steder** (spot CRUD + import/export).
+- `app/page.tsx` is a coordinator (~220 lines) — state, callbacks, view
+  dispatch. No form state, no modal state.
+- View components: `CatchesView`, `BulkOpsView`, `SpotsView`.
+- Spot management: list, inline create form, edit modal, delete confirm,
+  JSON paste import, JSON export.
+- Aliases are first-class in the spot form (textarea, one per line), feeding
+  the AI prompt's entity resolution.
+- Spot import uses the same architecture as catches: typed models, Zod
+  validation (`spotSchema`), mapper layer, tolerant per-row import.
 
 ## Upcoming features
 
