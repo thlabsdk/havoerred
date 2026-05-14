@@ -17,7 +17,7 @@ import {
   toCatchUpdatePayload,
 } from "../lib/catch_mappers";
 
-import { catchSchema } from "../lib/catch-schema";
+import { catchSchema, type CatchFormData } from "../lib/catch-schema";
 
 import { supabase } from "../lib/supabase";
 
@@ -56,6 +56,18 @@ export default function HomePage() {
 
   const [importMessage, setImportMessage] =
     useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const [showAiModal, setShowAiModal] =
+    useState(false);
+
+  const [aiDescription, setAiDescription] =
+    useState("");
+
+  const [aiParsedResult, setAiParsedResult] =
+    useState<CatchFormData | null>(null);
+
+  const [aiLoading, setAiLoading] =
+    useState(false);
 
   const formatSupabaseError = (error: unknown) => {
     if (!error || typeof error !== "object") {
@@ -462,6 +474,118 @@ export default function HomePage() {
     }
   }
 
+  async function handleAiParse() {
+    if (!aiDescription.trim()) {
+      setImportMessage({
+        text: 'Please enter a catch description',
+        type: 'error',
+      });
+      return;
+    }
+
+    setAiLoading(true);
+
+    try {
+      const response = await fetch('/api/parse-catch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: aiDescription }),
+      });
+
+      const responseText = await response.text();
+      let responseBody: unknown = responseText;
+
+      try {
+        responseBody = JSON.parse(responseText);
+      } catch {
+        // Keep the raw text when the response is not valid JSON.
+      }
+
+      if (!response.ok) {
+        const errorBody = typeof responseBody === 'string'
+          ? responseBody
+          : JSON.stringify(responseBody, null, 2);
+
+        const errorMessage =
+          typeof responseBody === 'object' && responseBody !== null && 'error' in responseBody
+            ? (responseBody as { error?: string }).error || 'Failed to parse catch'
+            : 'Failed to parse catch';
+
+        setImportMessage({
+          text: errorMessage,
+          type: 'error',
+        });
+
+        console.error('AI parse error:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseBody: errorBody,
+          requestBody: { description: aiDescription },
+        });
+        return;
+      }
+
+      if (typeof responseBody === 'string') {
+        try {
+          responseBody = JSON.parse(responseBody);
+        } catch (parseError) {
+          console.error('AI parse error: non-JSON success response', {
+            status: response.status,
+            statusText: response.statusText,
+            responseText,
+            parseError: String(parseError),
+          });
+          setImportMessage({
+            text: 'AI returned invalid JSON',
+            type: 'error',
+          });
+          return;
+        }
+      }
+
+      console.log('AI parse success:', {
+        status: response.status,
+        statusText: response.statusText,
+        responseBody: JSON.stringify(responseBody, null, 2),
+      });
+
+      setAiParsedResult(responseBody as CatchFormData);
+    } catch (err) {
+      setImportMessage({
+        text: 'Error connecting to AI service',
+        type: 'error',
+      });
+      console.error('Error calling parse-catch API:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function applyAiResult() {
+    if (!aiParsedResult) return;
+
+    setDate(aiParsedResult.date || '');
+    setLocation(aiParsedResult.location || '');
+    setFjord(aiParsedResult.fjord || '');
+    setBait(aiParsedResult.bait || '');
+    setLengthCm(aiParsedResult.lengthCm || null);
+    setUndersized(aiParsedResult.undersized || false);
+    setWindDirection(aiParsedResult.windDirection || '');
+    setNotes(aiParsedResult.notes || '');
+
+    setAiParsedResult(null);
+    setAiDescription("");
+    setShowAiModal(false);
+    setImportMessage({
+      text: 'Catch suggestion applied to form',
+      type: 'success',
+    });
+
+    setTimeout(() => {
+      setImportMessage(null);
+    }, 3000);
+  }
+
   if (!hydrated) {
     return (
       <main className="min-h-screen bg-slate-950 text-white p-8">
@@ -524,6 +648,15 @@ export default function HomePage() {
             className="w-full bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-2xl transition-colors font-semibold"
           >
             Indsæt JSON
+          </button>
+        </div>
+
+        <div className="mb-6">
+          <button
+            onClick={() => setShowAiModal(true)}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-2xl transition-colors font-semibold"
+          >
+            AI-fortolk fangst
           </button>
         </div>
 
@@ -619,6 +752,131 @@ export default function HomePage() {
                 Importér
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showAiModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-white">
+              AI-fortolk fangst
+            </h2>
+
+            {!aiParsedResult ? (
+              <>
+                <textarea
+                  value={aiDescription}
+                  onChange={(e) => setAiDescription(e.target.value)}
+                  placeholder="Beskriv din fangst på dansk... fx: 'Fiskedag ved Kyndby i Roskilde Fjord. Brugte spinne som agn. En smuk sølvørred på omkring 65 cm, køn fisk. Vejret var vindfuldt fra nord.'"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-normal text-sm"
+                  rows={6}
+                />
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowAiModal(false);
+                      setAiDescription("");
+                    }}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                  >
+                    Annuller
+                  </button>
+
+                  <button
+                    onClick={handleAiParse}
+                    disabled={aiLoading}
+                    className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg transition-colors font-semibold disabled:cursor-not-allowed"
+                  >
+                    {aiLoading ? 'Fortolker...' : 'Fortolk'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6">
+                  <h3 className="text-lg font-bold mb-3 text-cyan-400">
+                    Parsed Result
+                  </h3>
+
+                  <div className="space-y-2 text-sm text-slate-300">
+                    {aiParsedResult.date && (
+                      <div>
+                        <span className="font-semibold text-white">Dato:</span>{' '}
+                        {aiParsedResult.date}
+                      </div>
+                    )}
+                    {aiParsedResult.location && (
+                      <div>
+                        <span className="font-semibold text-white">Sted:</span>{' '}
+                        {aiParsedResult.location}
+                      </div>
+                    )}
+                    {aiParsedResult.fjord && (
+                      <div>
+                        <span className="font-semibold text-white">Fjord:</span>{' '}
+                        {aiParsedResult.fjord}
+                      </div>
+                    )}
+                    {aiParsedResult.bait && (
+                      <div>
+                        <span className="font-semibold text-white">Agn:</span>{' '}
+                        {aiParsedResult.bait}
+                      </div>
+                    )}
+                    {aiParsedResult.lengthCm && (
+                      <div>
+                        <span className="font-semibold text-white">
+                          Længde:
+                        </span>{' '}
+                        {aiParsedResult.lengthCm} cm
+                      </div>
+                    )}
+                    {aiParsedResult.undersized && (
+                      <div>
+                        <span className="font-semibold text-white">
+                          Undersized:
+                        </span>{' '}
+                        Ja
+                      </div>
+                    )}
+                    {aiParsedResult.windDirection && (
+                      <div>
+                        <span className="font-semibold text-white">Vind:</span>{' '}
+                        {aiParsedResult.windDirection}
+                      </div>
+                    )}
+                    {aiParsedResult.notes && (
+                      <div>
+                        <span className="font-semibold text-white">Noter:</span>{' '}
+                        {aiParsedResult.notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setAiParsedResult(null);
+                      setAiDescription("");
+                      setShowAiModal(false);
+                    }}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                  >
+                    Luk
+                  </button>
+
+                  <button
+                    onClick={applyAiResult}
+                    className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg transition-colors font-semibold"
+                  >
+                    Anvend
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
