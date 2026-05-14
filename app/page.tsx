@@ -48,6 +48,15 @@ export default function HomePage() {
   const [catches, setCatches] = useState<
     Catch[]>([]);
 
+  const [showJsonModal, setShowJsonModal] =
+    useState(false);
+
+  const [jsonPasteInput, setJsonPasteInput] =
+    useState("");
+
+  const [importMessage, setImportMessage] =
+    useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
   const formatSupabaseError = (error: unknown) => {
     if (!error || typeof error !== "object") {
       return error;
@@ -359,6 +368,100 @@ export default function HomePage() {
     fileInput.click();
   }
 
+  async function handleJsonPasteImport() {
+    try {
+      const parsedData = JSON.parse(jsonPasteInput);
+
+      // Handle both direct array format and export format
+      const catchesToImport = Array.isArray(parsedData)
+        ? parsedData
+        : parsedData.catches || [];
+
+      if (!Array.isArray(catchesToImport)) {
+        setImportMessage({
+          text: 'Invalid JSON format: expected array of catches',
+          type: 'error',
+        });
+        return;
+      }
+
+      const validCatches = [];
+      const failedCatches = [];
+
+      // Validate each catch
+      for (let i = 0; i < catchesToImport.length; i++) {
+        const catchData = catchesToImport[i];
+        const validation = catchSchema.safeParse(catchData);
+
+        if (validation.success) {
+          validCatches.push(catchData);
+        } else {
+          failedCatches.push({
+            index: i,
+            data: catchData,
+            errors: validation.error.issues,
+          });
+        }
+      }
+
+      if (failedCatches.length > 0) {
+        console.warn(
+          `${failedCatches.length} invalid entries skipped:`,
+          failedCatches
+        );
+      }
+
+      if (validCatches.length === 0) {
+        setImportMessage({
+          text: 'No valid catches to import',
+          type: 'error',
+        });
+        return;
+      }
+
+      // Insert valid catches into Supabase
+      const insertPayloads = validCatches.map(
+        toCatchInsertPayload
+      );
+
+      const { data, error } = await supabase
+        .from('catches')
+        .insert(insertPayloads)
+        .select();
+
+      if (error) {
+        setImportMessage({
+          text: 'Failed to import catches',
+          type: 'error',
+        });
+        console.error('Failed to import catches:', formatSupabaseError(error));
+        return;
+      }
+
+      if (data) {
+        const newCatches = (data as CatchFromDB[]).map(mapCatchFromDb);
+        setCatches([...newCatches, ...catches]);
+        setImportMessage({
+          text: `Successfully imported ${newCatches.length} catches`,
+          type: 'success',
+        });
+        setJsonPasteInput("");
+        setShowJsonModal(false);
+
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setImportMessage(null);
+        }, 3000);
+      }
+    } catch (err) {
+      setImportMessage({
+        text: err instanceof SyntaxError ? 'Invalid JSON format' : 'Error importing catches',
+        type: 'error',
+      });
+      console.error('Error importing catches:', err);
+    }
+  }
+
   if (!hydrated) {
     return (
       <main className="min-h-screen bg-slate-950 text-white p-8">
@@ -415,6 +518,15 @@ export default function HomePage() {
           </button>
         </div>
 
+        <div className="mb-6">
+          <button
+            onClick={() => setShowJsonModal(true)}
+            className="w-full bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-2xl transition-colors font-semibold"
+          >
+            Indsæt JSON
+          </button>
+        </div>
+
         <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 mb-8">
           <h1 className="text-4xl font-bold mb-2">
             Havørredloggen
@@ -463,6 +575,53 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      {importMessage && (
+        <div className={`fixed top-8 right-8 px-6 py-3 rounded-2xl font-semibold ${
+          importMessage.type === 'success'
+            ? 'bg-green-500 text-white'
+            : 'bg-red-500 text-white'
+        }`}>
+          {importMessage.text}
+        </div>
+      )}
+
+      {showJsonModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-w-xl w-full">
+            <h2 className="text-2xl font-bold mb-4 text-white">
+              Indsæt JSON
+            </h2>
+
+            <textarea
+              value={jsonPasteInput}
+              onChange={(e) => setJsonPasteInput(e.target.value)}
+              placeholder="Indsæt JSON her..."
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-sm"
+              rows={10}
+            />
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowJsonModal(false);
+                  setJsonPasteInput("");
+                }}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+              >
+                Annuller
+              </button>
+
+              <button
+                onClick={handleJsonPasteImport}
+                className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg transition-colors font-semibold"
+              >
+                Importér
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
