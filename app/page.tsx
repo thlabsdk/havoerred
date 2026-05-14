@@ -9,10 +9,13 @@ import StatsCards from "../components/StatsCards";
 import {
   Catch,
   CatchFromDB,
+} from "../types/catch";
+
+import {
   mapCatchFromDb,
   toCatchInsertPayload,
   toCatchUpdatePayload,
-} from "../types/catch";
+} from "../lib/catch_mappers";
 
 import { supabase } from "../lib/supabase";
 
