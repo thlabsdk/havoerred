@@ -6,14 +6,24 @@ import CatchCard from "../components/CatchCard";
 import CatchForm from "../components/CatchForm";
 import StatsCards from "../components/StatsCards";
 
-import { Catch } from "../types/catch";
+import {
+  Catch,
+  CatchFromDB,
+  mapCatchFromDb,
+  toCatchInsertPayload,
+  toCatchUpdatePayload,
+} from "../types/catch";
 
 import { supabase } from "../lib/supabase";
 
 export default function HomePage() {
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
+  const [fjord, setFjord] = useState("");
   const [bait, setBait] = useState("");
+  const [lengthCm, setLengthCm] = useState<number | null>(null);
+  const [undersized, setUndersized] = useState(false);
+  const [windDirection, setWindDirection] = useState("");
   const [notes, setNotes] = useState("");
 
   const [search, setSearch] = useState("");
@@ -27,16 +37,24 @@ export default function HomePage() {
   const [hydrated, setHydrated] =
     useState(false);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
-
   const [deletingId, setDeletingId] =
     useState<number | null>(null);
 
   const [catches, setCatches] = useState<
     Catch[]>([]);
 
-    
+  const formatSupabaseError = (error: unknown) => {
+    if (!error || typeof error !== "object") {
+      return error;
+    }
+
+    if ("message" in error) {
+      return (error as { message?: string }).message ?? error;
+    }
+
+    return error;
+  };
+
   useEffect(() => {
     async function loadCatches() {
       try {
@@ -48,16 +66,20 @@ export default function HomePage() {
           });
 
         if (error) {
-          console.error(error);
+          console.error(
+            "Failed to load catches:",
+            formatSupabaseError(error)
+          );
           return;
         }
 
         if (data) {
-          setCatches(data as Catch[]);
+          setCatches(
+            (data as CatchFromDB[]).map(mapCatchFromDb)
+          );
         }
       } finally {
         setHydrated(true);
-        setIsLoading(false);
       }
     }
 
@@ -72,20 +94,29 @@ export default function HomePage() {
     setIsSaving(true);
 
     if (editingId !== null) {
+      const updatePayload = toCatchUpdatePayload({
+        date,
+        location,
+        fjord,
+        bait,
+        lengthCm,
+        undersized,
+        windDirection,
+        notes,
+      });
+
       const { data, error } = await supabase
         .from("catches")
-        .update({
-          date,
-          location,
-          bait,
-          notes,
-        })
+        .update(updatePayload)
         .eq("id", editingId)
         .select()
         .single();
 
       if (error) {
-        console.error(error);
+        console.error(
+          "Failed to update catch:",
+          formatSupabaseError(error)
+        );
         setIsSaving(false);
         return;
       }
@@ -93,34 +124,41 @@ export default function HomePage() {
       setCatches(
         catches.map((catchItem) =>
           catchItem.id === editingId
-            ? (data as Catch)
+            ? mapCatchFromDb(data as CatchFromDB)
             : catchItem
         )
       );
 
       setEditingId(null);
     } else {
+      const insertPayload = toCatchInsertPayload({
+        date,
+        location,
+        fjord,
+        bait,
+        lengthCm,
+        undersized,
+        windDirection,
+        notes,
+      });
+
       const { data, error } = await supabase
         .from("catches")
-        .insert([
-          {
-            date,
-            location,
-            bait,
-            notes,
-          },
-        ])
+        .insert([insertPayload])
         .select()
         .single();
 
       if (error) {
-        console.error(error);
+        console.error(
+          "Failed to insert catch:",
+          formatSupabaseError(error)
+        );
         setIsSaving(false);
         return;
       }
 
       setCatches([
-        data as Catch,
+        mapCatchFromDb(data as CatchFromDB),
         ...catches,
       ]);
     }
@@ -129,7 +167,11 @@ export default function HomePage() {
 
     setDate("");
     setLocation("");
+    setFjord("");
     setBait("");
+    setLengthCm(null);
+    setUndersized(false);
+    setWindDirection("");
     setNotes("");
   }
 
@@ -138,7 +180,11 @@ export default function HomePage() {
 
     setDate(catchItem.date);
     setLocation(catchItem.location);
+    setFjord(catchItem.fjord);
     setBait(catchItem.bait);
+    setLengthCm(catchItem.lengthCm);
+    setUndersized(catchItem.undersized);
+    setWindDirection(catchItem.windDirection);
     setNotes(catchItem.notes);
   }
 
@@ -152,7 +198,10 @@ export default function HomePage() {
         .eq("id", id);
 
       if (error) {
-        console.error(error);
+        console.error(
+          "Failed to delete catch:",
+          formatSupabaseError(error)
+        );
         return;
       }
 
@@ -236,8 +285,16 @@ export default function HomePage() {
             setDate={setDate}
             location={location}
             setLocation={setLocation}
+            fjord={fjord}
+            setFjord={setFjord}
             bait={bait}
             setBait={setBait}
+            lengthCm={lengthCm}
+            setLengthCm={setLengthCm}
+            undersized={undersized}
+            setUndersized={setUndersized}
+            windDirection={windDirection}
+            setWindDirection={setWindDirection}
             notes={notes}
             setNotes={setNotes}
             onSubmit={handleSubmit}

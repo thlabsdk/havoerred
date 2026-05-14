@@ -16,8 +16,20 @@ type CatchFormProps = {
   location: string;
   setLocation: (value: string) => void;
 
+  fjord: string;
+  setFjord: (value: string) => void;
+
   bait: string;
   setBait: (value: string) => void;
+
+  lengthCm: number | null;
+  setLengthCm: (value: number | null) => void;
+
+  undersized: boolean;
+  setUndersized: (value: boolean) => void;
+
+  windDirection: string;
+  setWindDirection: (value: string) => void;
 
   notes: string;
   setNotes: (value: string) => void;
@@ -99,8 +111,16 @@ export default function CatchForm({
   setDate,
   location,
   setLocation,
+  fjord,
+  setFjord,
   bait,
   setBait,
+  lengthCm,
+  setLengthCm,
+  undersized,
+  setUndersized,
+  windDirection,
+  setWindDirection,
   notes,
   setNotes,
   onSubmit,
@@ -191,6 +211,73 @@ export default function CatchForm({
         {errors.location && (
           <p className="mt-1 text-sm text-red-400">{errors.location}</p>
         )}
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm font-semibold text-slate-300">
+          Fjord
+        </label>
+
+        <input
+          type="text"
+          value={fjord}
+          disabled={isDisabled}
+          onChange={(e) => setFjord(e.target.value)}
+          placeholder="Fx Roskilde Fjord"
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed"
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="block mb-2 text-sm font-semibold text-slate-300">
+            Længde (cm)
+          </label>
+
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={lengthCm ?? ''}
+            disabled={isDisabled}
+            onChange={(e) => {
+              const value = e.target.value;
+              setLengthCm(value === '' ? null : Number(value));
+            }}
+            placeholder="Fx 67"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </div>
+
+        <div className="flex items-end">
+          <label className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-300 cursor-pointer transition-colors hover:border-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed">
+            <span className="block mb-2 text-sm font-semibold text-slate-300">
+              Undersized
+            </span>
+            <input
+              type="checkbox"
+              checked={undersized}
+              disabled={isDisabled}
+              onChange={(e) => setUndersized(e.target.checked)}
+              className="h-5 w-5 rounded text-cyan-500 focus:ring-cyan-500"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm font-semibold text-slate-300">
+          Vindretning
+        </label>
+
+        <input
+          type="text"
+          value={windDirection}
+          disabled={isDisabled}
+          onChange={(e) => setWindDirection(e.target.value)}
+          placeholder="Fx NNV"
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed"
+        />
       </div>
 
       <div>

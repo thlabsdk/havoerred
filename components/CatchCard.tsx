@@ -15,14 +15,48 @@ export default function CatchCard({
 }: CatchCardProps) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-      <div className="flex justify-between mb-3">
-        <h2 className="text-xl font-bold">
-          {catchItem.location}
-        </h2>
+      <div className="flex flex-col gap-2 mb-3">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold">
+              {catchItem.location}
+            </h2>
+            <p className="text-slate-400 text-sm">
+              {catchItem.fjord}
+            </p>
+          </div>
 
-        <span className="text-slate-400">
-          {catchItem.date}
-        </span>
+          <span className="text-slate-400">
+            {catchItem.date}
+          </span>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl bg-slate-950 p-3 border border-slate-800">
+            <p className="text-xs uppercase text-slate-500">
+              Længde
+            </p>
+            <p className="font-semibold text-white">
+              {catchItem.lengthCm ?? '-'} cm
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-950 p-3 border border-slate-800">
+            <p className="text-xs uppercase text-slate-500">
+              Undersized
+            </p>
+            <p className="font-semibold text-white">
+              {catchItem.undersized ? 'Ja' : 'Nej'}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-950 p-3 border border-slate-800">
+            <p className="text-xs uppercase text-slate-500">
+              Vind
+            </p>
+            <p className="font-semibold text-white">
+              {catchItem.windDirection || '-'}
+            </p>
+          </div>
+        </div>
       </div>
 
       <p className="text-cyan-400 mb-2">
