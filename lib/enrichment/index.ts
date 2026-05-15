@@ -134,6 +134,7 @@ export async function enrichCatch(catchId: number): Promise<EnrichResult> {
     enrichmentError: null,
     weatherSource: reading.weatherSource,
     weatherFetchedAt: reading.weatherFetchedAt,
+    windDirection: reading.windDirection,
     windSpeedMs: reading.windSpeedMs,
     airTemperatureC: reading.airTemperatureC,
     weatherCode: reading.weatherCode,
@@ -141,6 +142,7 @@ export async function enrichCatch(catchId: number): Promise<EnrichResult> {
 
   console.log(`${tag(catchId)} enriched ok`, {
     source: reading.weatherSource,
+    windDirection: reading.windDirection,
     windSpeedMs: reading.windSpeedMs,
     airTemperatureC: reading.airTemperatureC,
     weatherCode: reading.weatherCode,

@@ -9,7 +9,7 @@ export type Catch = {
   bait: string;
   lengthCm: number | null;
   undersized: boolean;
-  windDirection: string;
+  windDirection: string | null;
   notes: string;
   spotId: number | null;
   createdAt: string;
@@ -56,6 +56,7 @@ type CatchOmitForInsert =
   | 'enrichmentError'
   | 'weatherSource'
   | 'weatherFetchedAt'
+  | 'windDirection'
   | 'windSpeedMs'
   | 'airTemperatureC'
   | 'weatherCode';
@@ -71,6 +72,7 @@ export type EnrichmentPatch = {
   enrichmentError: string | null;
   weatherSource: string | null;
   weatherFetchedAt: string | null;
+  windDirection: string | null;
   windSpeedMs: number | null;
   airTemperatureC: number | null;
   weatherCode: string | null;

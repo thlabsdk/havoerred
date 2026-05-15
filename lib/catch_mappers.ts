@@ -10,7 +10,7 @@ export function mapCatchFromDb(catchRow: CatchFromDB): Catch {
     bait: catchRow.bait,
     lengthCm: catchRow.length_cm,
     undersized: catchRow.undersized,
-    windDirection: catchRow.wind_direction ?? '',
+    windDirection: catchRow.wind_direction,
     notes: catchRow.notes,
     spotId: catchRow.spot_id ?? null,
     createdAt: catchRow.created_at,
@@ -35,7 +35,6 @@ export function toCatchInsertPayload(catchData: CatchInsert) {
     bait: catchData.bait,
     length_cm: catchData.lengthCm,
     undersized: catchData.undersized,
-    wind_direction: catchData.windDirection || null,
     notes: catchData.notes,
     spot_id: catchData.spotId ?? null,
   };
@@ -73,7 +72,7 @@ export function toCatchUpdatePayload(catchData: CatchUpdate) {
   }
 
   if (catchData.windDirection !== undefined) {
-    payload.wind_direction = catchData.windDirection || null;
+    payload.wind_direction = catchData.windDirection;
   }
 
   if (catchData.notes !== undefined) {

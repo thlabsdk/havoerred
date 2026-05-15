@@ -9,7 +9,6 @@ const validInput = {
   bait: 'Mepps #3',
   lengthCm: 42,
   undersized: false,
-  windDirection: 'NW',
   notes: 'overcast',
   spotId: 7,
 };
@@ -40,8 +39,8 @@ describe('catchSchema', () => {
     expect(r.success).toBe(false);
   });
 
-  it('accepts empty fjord and windDirection (text fields can be blank)', () => {
-    const r = catchSchema.safeParse({ ...validInput, fjord: '', windDirection: '' });
+  it('accepts empty fjord (text field can be blank)', () => {
+    const r = catchSchema.safeParse({ ...validInput, fjord: '' });
     expect(r.success).toBe(true);
   });
 

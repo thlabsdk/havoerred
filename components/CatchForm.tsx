@@ -34,9 +34,6 @@ type CatchFormProps = {
   undersized: boolean;
   setUndersized: (value: boolean) => void;
 
-  windDirection: string;
-  setWindDirection: (value: string) => void;
-
   notes: string;
   setNotes: (value: string) => void;
 
@@ -148,8 +145,6 @@ export default function CatchForm({
   setLengthCm,
   undersized,
   setUndersized,
-  windDirection,
-  setWindDirection,
   notes,
   setNotes,
   spotId,
@@ -342,21 +337,6 @@ export default function CatchForm({
             />
           </label>
         </div>
-      </div>
-
-      <div>
-        <label className="block mb-2 text-sm font-semibold text-slate-300">
-          Vindretning
-        </label>
-
-        <input
-          type="text"
-          value={windDirection}
-          disabled={isDisabled}
-          onChange={(e) => setWindDirection(e.target.value)}
-          placeholder="Fx NNV"
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed"
-        />
       </div>
 
       <div>

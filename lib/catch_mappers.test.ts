@@ -52,10 +52,19 @@ describe('mapCatchFromDb', () => {
     });
   });
 
-  it('converts null fjord and wind_direction to empty strings', () => {
-    const mapped = mapCatchFromDb({ ...baseRow, fjord: null, wind_direction: null });
+  it('converts null fjord to empty string', () => {
+    const mapped = mapCatchFromDb({ ...baseRow, fjord: null });
     expect(mapped.fjord).toBe('');
-    expect(mapped.windDirection).toBe('');
+  });
+
+  it('forwards null wind_direction as null (enrichment-owned, nullable)', () => {
+    const mapped = mapCatchFromDb({ ...baseRow, wind_direction: null });
+    expect(mapped.windDirection).toBeNull();
+  });
+
+  it('preserves a non-null wind_direction string', () => {
+    const mapped = mapCatchFromDb({ ...baseRow, wind_direction: 'SV' });
+    expect(mapped.windDirection).toBe('SV');
   });
 
   it('converts null time_of_day to empty string', () => {
@@ -98,25 +107,22 @@ describe('toCatchInsertPayload', () => {
     bait: 'Mepps #3',
     lengthCm: 42,
     undersized: false,
-    windDirection: 'NW',
     notes: 'overcast',
     spotId: 7,
   };
 
-  it('converts empty fjord, windDirection and timeOfDay to null', () => {
+  it('converts empty fjord and timeOfDay to null', () => {
     const payload = toCatchInsertPayload({
       ...baseInsert,
       fjord: '',
-      windDirection: '',
       timeOfDay: '',
     });
     expect(payload.fjord).toBeNull();
-    expect(payload.wind_direction).toBeNull();
     expect(payload.time_of_day).toBeNull();
   });
 
-  it('preserves non-empty optional fields and snake_cases length + spot + time_of_day', () => {
-    const payload = toCatchInsertPayload(baseInsert);
+  it('snake_cases optional fields and omits wind_direction (enrichment-owned)', () => {
+    const payload = toCatchInsertPayload(baseInsert) as Record<string, unknown>;
     expect(payload).toEqual({
       date: '14/05/2026',
       time_of_day: '06:30',
@@ -125,10 +131,10 @@ describe('toCatchInsertPayload', () => {
       bait: 'Mepps #3',
       length_cm: 42,
       undersized: false,
-      wind_direction: 'NW',
       notes: 'overcast',
       spot_id: 7,
     });
+    expect(payload).not.toHaveProperty('wind_direction');
   });
 
   it('passes through null spotId', () => {
@@ -141,6 +147,7 @@ describe('toCatchInsertPayload', () => {
     expect(payload).not.toHaveProperty('enrichment_status');
     expect(payload).not.toHaveProperty('weather_source');
     expect(payload).not.toHaveProperty('wind_speed_ms');
+    expect(payload).not.toHaveProperty('wind_direction');
   });
 });
 
@@ -158,9 +165,14 @@ describe('toCatchUpdatePayload', () => {
     expect(payload).toEqual({ length_cm: null, undersized: false });
   });
 
-  it('treats empty fjord/windDirection/timeOfDay as null', () => {
-    const payload = toCatchUpdatePayload({ fjord: '', windDirection: '', timeOfDay: '' });
-    expect(payload).toEqual({ fjord: null, wind_direction: null, time_of_day: null });
+  it('treats empty fjord/timeOfDay as null', () => {
+    const payload = toCatchUpdatePayload({ fjord: '', timeOfDay: '' });
+    expect(payload).toEqual({ fjord: null, time_of_day: null });
+  });
+
+  it('passes windDirection through as-is (null or cardinal string from enrichment)', () => {
+    expect(toCatchUpdatePayload({ windDirection: 'SV' })).toEqual({ wind_direction: 'SV' });
+    expect(toCatchUpdatePayload({ windDirection: null })).toEqual({ wind_direction: null });
   });
 
   it('passes through non-empty timeOfDay', () => {
@@ -181,6 +193,7 @@ describe('toCatchUpdatePayload', () => {
       enrichmentError: null,
       weatherSource: 'open-meteo:archive',
       weatherFetchedAt: '2026-05-14T10:05:00Z',
+      windDirection: 'SV',
       windSpeedMs: 4.2,
       airTemperatureC: 8.1,
       weatherCode: '61',
@@ -190,6 +203,7 @@ describe('toCatchUpdatePayload', () => {
       enrichment_error: null,
       weather_source: 'open-meteo:archive',
       weather_fetched_at: '2026-05-14T10:05:00Z',
+      wind_direction: 'SV',
       wind_speed_ms: 4.2,
       air_temperature_c: 8.1,
       weather_code: '61',
@@ -220,7 +234,6 @@ describe('mapper round-trip', () => {
       bait: camel.bait,
       lengthCm: camel.lengthCm,
       undersized: camel.undersized,
-      windDirection: camel.windDirection,
       notes: camel.notes,
       spotId: camel.spotId,
     };
@@ -233,7 +246,6 @@ describe('mapper round-trip', () => {
       bait: baseRow.bait,
       length_cm: baseRow.length_cm,
       undersized: baseRow.undersized,
-      wind_direction: baseRow.wind_direction,
       notes: baseRow.notes,
       spot_id: baseRow.spot_id,
     });

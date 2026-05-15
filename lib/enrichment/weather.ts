@@ -1,4 +1,5 @@
 import type { ProviderOutcome, WeatherLookup, WeatherReading } from './types';
+import { degreeToCardinal } from '../weather';
 
 const ARCHIVE_BASE = 'https://archive-api.open-meteo.com/v1/archive';
 const FORECAST_BASE = 'https://api.open-meteo.com/v1/forecast';
@@ -35,7 +36,7 @@ const buildUrl = (base: string, lookup: WeatherLookup): string => {
     longitude: lookup.longitude.toString(),
     start_date: lookup.isoDate,
     end_date: lookup.isoDate,
-    hourly: 'temperature_2m,wind_speed_10m,weather_code',
+    hourly: 'temperature_2m,wind_speed_10m,wind_direction_10m,weather_code',
     wind_speed_unit: 'ms',
     timezone: TIMEZONE,
   });
@@ -46,6 +47,7 @@ type OpenMeteoHourly = {
   time?: string[];
   temperature_2m?: Array<number | null>;
   wind_speed_10m?: Array<number | null>;
+  wind_direction_10m?: Array<number | null>;
   weather_code?: Array<number | null>;
 };
 
@@ -108,12 +110,15 @@ export async function fetchWeather(
 
   const temperature = hourly.temperature_2m?.[idx] ?? null;
   const windSpeed = hourly.wind_speed_10m?.[idx] ?? null;
+  const windDirectionDeg = hourly.wind_direction_10m?.[idx] ?? null;
+  const windDirection = degreeToCardinal(windDirectionDeg);
   const codeRaw = hourly.weather_code?.[idx];
   const weatherCode = codeRaw === null || codeRaw === undefined ? null : String(codeRaw);
 
   const reading: WeatherReading = {
     weatherSource: source,
     weatherFetchedAt: new Date().toISOString(),
+    windDirection,
     windSpeedMs: windSpeed,
     airTemperatureC: temperature,
     weatherCode,
@@ -122,6 +127,7 @@ export async function fetchWeather(
   log('response', {
     pickedHour: hourly.time[idx],
     airTemperatureC: reading.airTemperatureC,
+    windDirection: reading.windDirection,
     windSpeedMs: reading.windSpeedMs,
     weatherCode: reading.weatherCode,
   });

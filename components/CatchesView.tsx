@@ -36,7 +36,6 @@ export default function CatchesView({
   const [bait, setBait] = useState('');
   const [lengthCm, setLengthCm] = useState<number | null>(null);
   const [undersized, setUndersized] = useState(false);
-  const [windDirection, setWindDirection] = useState('');
   const [notes, setNotes] = useState('');
   const [spotId, setSpotId] = useState<number | null>(null);
 
@@ -59,7 +58,6 @@ export default function CatchesView({
     setBait('');
     setLengthCm(null);
     setUndersized(false);
-    setWindDirection('');
     setNotes('');
     setSpotId(null);
     setEditingId(null);
@@ -77,7 +75,6 @@ export default function CatchesView({
       bait,
       lengthCm,
       undersized,
-      windDirection,
       notes,
       spotId,
     };
@@ -104,7 +101,6 @@ export default function CatchesView({
     setBait(catchItem.bait);
     setLengthCm(catchItem.lengthCm);
     setUndersized(catchItem.undersized);
-    setWindDirection(catchItem.windDirection);
     setNotes(catchItem.notes);
     setSpotId(catchItem.spotId);
   }
@@ -178,7 +174,6 @@ export default function CatchesView({
     setBait(aiParsedResult.bait || '');
     setLengthCm(aiParsedResult.lengthCm || null);
     setUndersized(aiParsedResult.undersized || false);
-    setWindDirection(aiParsedResult.windDirection || '');
     setNotes(aiParsedResult.notes || '');
     setSpotId(aiParsedResult.spotId ?? null);
 
@@ -238,8 +233,6 @@ export default function CatchesView({
           setLengthCm={setLengthCm}
           undersized={undersized}
           setUndersized={setUndersized}
-          windDirection={windDirection}
-          setWindDirection={setWindDirection}
           notes={notes}
           setNotes={setNotes}
           spotId={spotId}
@@ -324,9 +317,6 @@ export default function CatchesView({
                     )}
                     {aiParsedResult.undersized && (
                       <div><span className="font-semibold text-white">Undersized:</span> Ja</div>
-                    )}
-                    {aiParsedResult.windDirection && (
-                      <div><span className="font-semibold text-white">Vind:</span> {aiParsedResult.windDirection}</div>
                     )}
                     {aiParsedResult.notes && (
                       <div><span className="font-semibold text-white">Noter:</span> {aiParsedResult.notes}</div>

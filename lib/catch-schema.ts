@@ -19,7 +19,6 @@ export const catchSchema = z.object({
   bait: z.string().min(1, 'Bait is required'),
   lengthCm: coerceLengthCm,
   undersized: z.boolean(),
-  windDirection: z.string(),
   notes: z.string(),
   spotId: optionalSpotId,
 });

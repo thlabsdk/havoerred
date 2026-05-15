@@ -79,7 +79,6 @@ Return ONE JSON object with EXACTLY these fields. Use the empty string "" for un
 - bait: string, the bait used. REQUIRED. If not given, use "Ukendt".
 - lengthCm: integer length in cm, or null if not given. Strip any unit text.
 - undersized: boolean. Will be re-derived from length on the server — set to false if you are unsure.
-- windDirection: 8-point compass abbreviation in English (N, NE, E, SE, S, SW, W, NW), or "" if not mentioned. Normalize Danish ("nordvest" -> "NW", "sydøst" -> "SE", etc.).
 - notes: string, any extra detail worth keeping. "" if nothing notable.
 - spotId: number or null. The id of the matching known spot if the description clearly references one of the user's spots below; otherwise null.
 

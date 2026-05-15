@@ -1,6 +1,7 @@
 export type WeatherReading = {
   weatherSource: string;
   weatherFetchedAt: string;
+  windDirection: string | null;
   windSpeedMs: number | null;
   airTemperatureC: number | null;
   weatherCode: string | null;

@@ -18,8 +18,8 @@ function renderEnrichmentLine(c: Catch): string {
     case 'enriched': {
       const parts: string[] = [];
       if (c.airTemperatureC !== null) parts.push(`${Math.round(c.airTemperatureC)}°C`);
+      if (c.windDirection) parts.push(c.windDirection);
       if (c.windSpeedMs !== null) parts.push(`${c.windSpeedMs.toFixed(1)} m/s`);
-      if (c.weatherCode !== null) parts.push(`kode ${c.weatherCode}`);
       return parts.length > 0 ? `Vejr: ${parts.join(' · ')}` : 'Vejr: ingen data';
     }
   }
@@ -52,7 +52,7 @@ export default function CatchCard({
           </span>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl bg-slate-950 p-3 border border-slate-800">
             <p className="text-xs uppercase text-slate-500">
               Længde
@@ -67,14 +67,6 @@ export default function CatchCard({
             </p>
             <p className="font-semibold text-white">
               {catchItem.undersized ? 'Ja' : 'Nej'}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-slate-950 p-3 border border-slate-800">
-            <p className="text-xs uppercase text-slate-500">
-              Vind
-            </p>
-            <p className="font-semibold text-white">
-              {catchItem.windDirection || '-'}
             </p>
           </div>
         </div>
