@@ -7,6 +7,24 @@ type CatchCardProps = {
   isDeleting?: boolean;
 };
 
+function renderEnrichmentLine(c: Catch): string {
+  switch (c.enrichmentStatus) {
+    case 'pending':
+      return 'Vejr: indlæser…';
+    case 'failed':
+      return 'Vejr: kunne ikke hentes';
+    case 'skipped':
+      return 'Vejr: ingen koordinater';
+    case 'enriched': {
+      const parts: string[] = [];
+      if (c.airTemperatureC !== null) parts.push(`${Math.round(c.airTemperatureC)}°C`);
+      if (c.windSpeedMs !== null) parts.push(`${c.windSpeedMs.toFixed(1)} m/s`);
+      if (c.weatherCode !== null) parts.push(`kode ${c.weatherCode}`);
+      return parts.length > 0 ? `Vejr: ${parts.join(' · ')}` : 'Vejr: ingen data';
+    }
+  }
+}
+
 export default function CatchCard({
   catchItem,
   onDelete,
@@ -26,8 +44,11 @@ export default function CatchCard({
             </p>
           </div>
 
-          <span className="text-slate-400">
-            {catchItem.date}
+          <span className="text-slate-400 text-right">
+            <span className="block">{catchItem.date}</span>
+            {catchItem.timeOfDay && (
+              <span className="block text-xs text-slate-500">{catchItem.timeOfDay}</span>
+            )}
           </span>
         </div>
 
@@ -65,6 +86,10 @@ export default function CatchCard({
 
       <p className="text-slate-300">
         {catchItem.notes}
+      </p>
+
+      <p className="text-xs text-slate-500 mt-3">
+        {renderEnrichmentLine(catchItem)}
       </p>
 
       <div className="flex gap-3 mt-4">

@@ -6,6 +6,7 @@ import SpotPicker from './SpotPicker';
 
 type ValidationErrors = {
   date?: string;
+  timeOfDay?: string;
   location?: string;
   bait?: string;
   notes?: string;
@@ -14,6 +15,9 @@ type ValidationErrors = {
 type CatchFormProps = {
   date: string;
   setDate: (value: string) => void;
+
+  timeOfDay: string;
+  setTimeOfDay: (value: string) => void;
 
   location: string;
   setLocation: (value: string) => void;
@@ -83,8 +87,17 @@ const validateDate = (dateStr: string): string | undefined => {
   return undefined;
 };
 
+const TIME_OF_DAY_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const validateTimeOfDay = (value: string): string | undefined => {
+  if (!value.trim()) return 'Tidspunkt er påkrævet';
+  if (!TIME_OF_DAY_REGEX.test(value)) return 'Tidspunkt skal være i format HH:mm (24-timer)';
+  return undefined;
+};
+
 const validateForm = (
   date: string,
+  timeOfDay: string,
   location: string,
   bait: string,
   notes: string
@@ -94,6 +107,11 @@ const validateForm = (
   const dateError = validateDate(date);
   if (dateError) {
     errors.date = dateError;
+  }
+
+  const timeError = validateTimeOfDay(timeOfDay);
+  if (timeError) {
+    errors.timeOfDay = timeError;
   }
 
   if (!location.trim()) {
@@ -118,6 +136,8 @@ const validateForm = (
 export default function CatchForm({
   date,
   setDate,
+  timeOfDay,
+  setTimeOfDay,
   location,
   setLocation,
   fjord,
@@ -156,7 +176,7 @@ export default function CatchForm({
   };
 
   const validateAndSetErrors = (): ValidationErrors => {
-    const newErrors = validateForm(date, location, bait, notes);
+    const newErrors = validateForm(date, timeOfDay, location, bait, notes);
     setErrors(newErrors);
     return newErrors;
   };
@@ -172,31 +192,60 @@ export default function CatchForm({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      <div>
-        <label className="block mb-2 text-sm font-semibold text-slate-300">
-          Dato
-        </label>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="block mb-2 text-sm font-semibold text-slate-300">
+            Dato
+          </label>
 
-        <input
-          type="text"
-          value={date}
-          disabled={isDisabled}
-          onChange={(e) => {
-            setDate(e.target.value);
-            if (errors.date) {
-              clearFieldError('date');
-            }
-          }}
-          placeholder="dd/mm/yyyy"
-          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-            errors.date
-              ? 'border-red-500 focus:ring-red-500'
-              : 'border-slate-700 focus:ring-cyan-500'
-          }`}
-        />
-        {errors.date && (
-          <p className="mt-1 text-sm text-red-400">{errors.date}</p>
-        )}
+          <input
+            type="text"
+            value={date}
+            disabled={isDisabled}
+            onChange={(e) => {
+              setDate(e.target.value);
+              if (errors.date) {
+                clearFieldError('date');
+              }
+            }}
+            placeholder="dd/mm/yyyy"
+            className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+              errors.date
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-slate-700 focus:ring-cyan-500'
+            }`}
+          />
+          {errors.date && (
+            <p className="mt-1 text-sm text-red-400">{errors.date}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block mb-2 text-sm font-semibold text-slate-300">
+            Tidspunkt
+          </label>
+
+          <input
+            type="time"
+            value={timeOfDay}
+            disabled={isDisabled}
+            onChange={(e) => {
+              setTimeOfDay(e.target.value);
+              if (errors.timeOfDay) {
+                clearFieldError('timeOfDay');
+              }
+            }}
+            placeholder="HH:mm"
+            className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+              errors.timeOfDay
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-slate-700 focus:ring-cyan-500'
+            }`}
+          />
+          {errors.timeOfDay && (
+            <p className="mt-1 text-sm text-red-400">{errors.timeOfDay}</p>
+          )}
+        </div>
       </div>
 
       <SpotPicker

@@ -4,7 +4,10 @@
       "Bash(dir \"C:\\\\Users\\\\troel\\\\havorred-log\\\\node_modules\\\\next\\\\dist\\\\docs\")",
       "PowerShell(npm run *)",
       "PowerShell(npx tsc --noEmit 2>&1)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(Get-ChildItem *)",
+      "Bash(ls *)",
+      "Bash(xargs grep -l \"export.*const.*=\")"
     ]
   }
 }

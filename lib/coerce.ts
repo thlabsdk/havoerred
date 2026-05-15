@@ -1,11 +1,18 @@
 import { z } from 'zod';
 
 export const DATE_REGEX = /^\d{2}\/\d{2}\/\d{4}$/;
+export const TIME_OF_DAY_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const optionalDateString = z
   .string()
   .refine((val) => val === '' || DATE_REGEX.test(val), {
     message: 'date must be empty or dd/mm/yyyy',
+  });
+
+export const optionalTimeString = z
+  .string()
+  .refine((val) => val === '' || TIME_OF_DAY_REGEX.test(val), {
+    message: 'time must be empty or HH:mm (24h)',
   });
 
 export const coerceLengthCm = z.preprocess((val) => {

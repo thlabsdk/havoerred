@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
 Return ONE JSON object with EXACTLY these fields. Use the empty string "" for unknown text fields. NEVER use null for text fields.
 
 - date: string in dd/mm/yyyy format, or "" if not given.
+- timeOfDay: string in 24h HH:mm format (e.g. "06:30", "18:45"), or "" if not given. Normalize Danish phrasing ("kl 6 om morgenen" -> "06:00", "halv ni" -> "08:30", "ved middagstid" -> "12:00", "om aftenen kl. 7" -> "19:00").
 - location: string, the fishing spot. REQUIRED. If the description does not name a spot, use "Ukendt".
 - fjord: string, the fjord/body of water, or "" if not mentioned.
 - bait: string, the bait used. REQUIRED. If not given, use "Ukendt".

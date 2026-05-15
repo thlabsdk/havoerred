@@ -30,6 +30,7 @@ export default function CatchesView({
   onToast,
 }: CatchesViewProps) {
   const [date, setDate] = useState('');
+  const [timeOfDay, setTimeOfDay] = useState('');
   const [location, setLocation] = useState('');
   const [fjord, setFjord] = useState('');
   const [bait, setBait] = useState('');
@@ -52,6 +53,7 @@ export default function CatchesView({
 
   function resetForm() {
     setDate('');
+    setTimeOfDay('');
     setLocation('');
     setFjord('');
     setBait('');
@@ -69,6 +71,7 @@ export default function CatchesView({
 
     const payload = {
       date,
+      timeOfDay,
       location,
       fjord,
       bait,
@@ -95,6 +98,7 @@ export default function CatchesView({
   function editCatch(catchItem: Catch) {
     setEditingId(catchItem.id);
     setDate(catchItem.date);
+    setTimeOfDay(catchItem.timeOfDay);
     setLocation(catchItem.location);
     setFjord(catchItem.fjord);
     setBait(catchItem.bait);
@@ -168,6 +172,7 @@ export default function CatchesView({
   function applyAiResult() {
     if (!aiParsedResult) return;
     setDate(aiParsedResult.date || '');
+    setTimeOfDay(aiParsedResult.timeOfDay || '');
     setLocation(aiParsedResult.location || '');
     setFjord(aiParsedResult.fjord || '');
     setBait(aiParsedResult.bait || '');
@@ -221,6 +226,8 @@ export default function CatchesView({
         <CatchForm
           date={date}
           setDate={setDate}
+          timeOfDay={timeOfDay}
+          setTimeOfDay={setTimeOfDay}
           location={location}
           setLocation={setLocation}
           fjord={fjord}
@@ -299,6 +306,9 @@ export default function CatchesView({
                   <div className="space-y-2 text-sm text-slate-300">
                     {aiParsedResult.date && (
                       <div><span className="font-semibold text-white">Dato:</span> {aiParsedResult.date}</div>
+                    )}
+                    {aiParsedResult.timeOfDay && (
+                      <div><span className="font-semibold text-white">Tidspunkt:</span> {aiParsedResult.timeOfDay}</div>
                     )}
                     {aiParsedResult.location && (
                       <div><span className="font-semibold text-white">Sted:</span> {aiParsedResult.location}</div>

@@ -91,7 +91,26 @@ export default function HomePage() {
     }
     const mapped = mapCatchFromDb(data as CatchFromDB);
     setCatches((prev) => [mapped, ...prev]);
+    triggerEnrichment(mapped.id);
     return mapped;
+  }
+
+  function triggerEnrichment(catchId: number): void {
+    fetch('/api/enrich-catch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ catchId }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json() as Promise<{ catch: Catch }>;
+      })
+      .then(({ catch: enriched }) => {
+        setCatches((prev) => prev.map((c) => (c.id === enriched.id ? enriched : c)));
+      })
+      .catch((err) => {
+        console.error(`[enrich-catch id=${catchId}] client trigger failed:`, err);
+      });
   }
 
   async function updateCatch(id: number, payload: CatchUpdate): Promise<Catch | null> {

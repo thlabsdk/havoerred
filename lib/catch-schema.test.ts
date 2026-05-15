@@ -3,6 +3,7 @@ import { catchSchema } from './catch-schema';
 
 const validInput = {
   date: '14/05/2026',
+  timeOfDay: '06:30',
   location: 'Frederiksværk',
   fjord: 'Roskilde Fjord',
   bait: 'Mepps #3',
@@ -95,6 +96,29 @@ describe('catchSchema', () => {
 
   it('rejects non-integer spotId', () => {
     const r = catchSchema.safeParse({ ...validInput, spotId: 3.14 });
+    expect(r.success).toBe(false);
+  });
+
+  it('accepts empty timeOfDay', () => {
+    const r = catchSchema.safeParse({ ...validInput, timeOfDay: '' });
+    expect(r.success).toBe(true);
+  });
+
+  it('treats missing timeOfDay as empty (legacy AI responses)', () => {
+    const { timeOfDay: _omit, ...legacy } = validInput;
+    void _omit;
+    const r = catchSchema.safeParse(legacy);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.timeOfDay).toBe('');
+  });
+
+  it('rejects malformed timeOfDay', () => {
+    const r = catchSchema.safeParse({ ...validInput, timeOfDay: '6:30' });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects out-of-range timeOfDay', () => {
+    const r = catchSchema.safeParse({ ...validInput, timeOfDay: '24:00' });
     expect(r.success).toBe(false);
   });
 });

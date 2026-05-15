@@ -1,6 +1,9 @@
+export type EnrichmentStatus = 'pending' | 'enriched' | 'failed' | 'skipped';
+
 export type Catch = {
   id: number;
   date: string;
+  timeOfDay: string;
   location: string;
   fjord: string;
   bait: string;
@@ -11,11 +14,20 @@ export type Catch = {
   spotId: number | null;
   createdAt: string;
   updatedAt: string;
+
+  enrichmentStatus: EnrichmentStatus;
+  enrichmentError: string | null;
+  weatherSource: string | null;
+  weatherFetchedAt: string | null;
+  windSpeedMs: number | null;
+  airTemperatureC: number | null;
+  weatherCode: string | null;
 };
 
 export type CatchFromDB = {
   id: number;
   date: string;
+  time_of_day: string | null;
   location: string;
   fjord: string | null;
   bait: string;
@@ -26,10 +38,40 @@ export type CatchFromDB = {
   spot_id: number | null;
   created_at: string;
   updated_at: string;
+
+  enrichment_status: EnrichmentStatus;
+  enrichment_error: string | null;
+  weather_source: string | null;
+  weather_fetched_at: string | null;
+  wind_speed_ms: number | null;
+  air_temperature_c: number | null;
+  weather_code: string | null;
 };
 
-export type CatchInsert = Omit<Catch, 'id' | 'createdAt' | 'updatedAt'>;
+type CatchOmitForInsert =
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'enrichmentStatus'
+  | 'enrichmentError'
+  | 'weatherSource'
+  | 'weatherFetchedAt'
+  | 'windSpeedMs'
+  | 'airTemperatureC'
+  | 'weatherCode';
 
-export type CatchUpdate = Partial<CatchInsert>;
+export type CatchInsert = Omit<Catch, CatchOmitForInsert>;
+
+export type CatchUpdate = Partial<CatchInsert> & Partial<EnrichmentPatch>;
 
 export type CatchWithoutTimestamps = Omit<Catch, 'createdAt' | 'updatedAt'>;
+
+export type EnrichmentPatch = {
+  enrichmentStatus: EnrichmentStatus;
+  enrichmentError: string | null;
+  weatherSource: string | null;
+  weatherFetchedAt: string | null;
+  windSpeedMs: number | null;
+  airTemperatureC: number | null;
+  weatherCode: string | null;
+};
