@@ -23,6 +23,20 @@
   - AI prompt now receives the user's spots and resolves matches to `spotId`
   - Defensive id validation against hallucinated ids
   - Test coverage for spot mappers + spotId behavior in catch schema/mappers
+- **Phase 3 — enrichment pipeline**:
+  - Weather enrichment via Open-Meteo (archive + forecast endpoints based on
+    catch date), populating `wind_speed_ms`, `air_temperature_c`,
+    `weather_code`, `weather_source`, `weather_fetched_at`
+  - Water enrichment via Open-Meteo Marine (sea-level MSL) deriving
+    `water_level_trend` and `tide_phase` heuristically
+  - Async orchestration: both providers run in parallel, each returns a
+    `ProviderOutcome<T>` so one failure can't take down the other
+  - Partial success persistence: `enriched` if either source succeeds,
+    `failed` only when both fail; errors concatenated into `enrichment_error`
+  - Fault injection via `TEST_WEATHER_FAIL` / `TEST_WATER_FAIL` env vars for
+    exercising partial-success and failure paths
+  - Idempotency: already-`enriched` rows short-circuit before any external IO
+  - `/api/enrich-catch` route fired from the client after insert
 
 ## Skipped/deferred
 
@@ -48,44 +62,53 @@ Concern separation by domain, no heavy admin framework, no new routing:
 
 ## Upcoming features
 
-- Phase 3 — enrichment pipeline (DMI weather for catch date + spot lat/lng)
-- Phase 4 — map-based catch visualization
-- Phase 5 — auth + RLS
-- Phase 6 — analytics dashboards + AI assistance over your own log
+- Phase 4 — queryability + analytics foundation (SQL-first)
+- Phase 5 — map-based catch visualization
+- Phase 6 — auth + RLS
+- Future exploration — "Ask your log" / RAG over the entity tables
 
-## Phase 3 — enrichment pipeline (next)
+## Phase 4 — queryability + analytics foundation (next)
 
-- Add `enrichment_status` column on `catches` (`pending | enriched | failed`)
-- New `/api/enrich-catch` route that takes a `catchId`, looks up the spot's
-  lat/lng, queries DMI for weather at the catch's date, patches the row
-- Fire from the client immediately after insert (fire-and-forget) and on
-  any page load that finds `pending` rows older than N minutes
-- Per-source columns: `weather_temp_c`, `weather_wind_dir`, `weather_wind_ms`,
-  `weather_source`, `weather_fetched_at`
-- UI: small enrichment pill on `CatchCard`
+SQL-first exploration over the enriched data. No dashboards, no charting
+framework — the goal is to be able to ask correlation questions and answer
+them with a query.
 
-## Phase 4 — maps
+- Analytics-oriented views in Supabase (e.g. `catches_enriched`) that join
+  catches + spots and surface enrichment columns in one row
+- Nullable-safe derived fields (e.g. month/season buckets, undersized flag,
+  wind-direction sector, has-weather / has-water predicates) so partial
+  enrichment doesn't poison aggregates
+- Correlation-ready shape: one row per catch with the dimensions you'd group
+  by — spot, bait, wind sector, tide phase, water trend, time of day
+- Exploratory filtering from the existing UI list (date range, bait, spot,
+  enrichment status) before any dedicated analytics surface
+- Lightweight smoke queries committed alongside the views so the shape is
+  documented and reproducible
+
+## Phase 5 — maps
 
 - Geocode spots that lack lat/lng (manual entry first, then a lookup service)
 - Leaflet or MapLibre map view rendering `spots` with catch markers
 - Filter by date range / bait / undersized
 
-## Phase 5 — auth + RLS
+## Phase 6 — auth + RLS
+
+Deferred while this stays a single-user/private learning project.
 
 - Supabase Auth (email + Google)
 - Populate `owner_user_id` on `spots` and `catches`
 - RLS policies (owner-only read/write)
 - Auth-protect `/api/parse-catch` and `/api/enrich-catch`
 
-## Phase 6 — analytics + AI assistance
+## Future exploration
 
-- Dashboards reading from `spots` + enriched `catches`
-- Catch counts, undersized ratios, spot popularity, bait success by conditions
 - "Ask your log" — RAG over your own catches using the entity tables
+  (spots, baits, enriched conditions). Not on the near-term roadmap; waits
+  on Phase 4 giving the data a clean queryable shape first.
 
 ## Cross-cutting
 
 - Re-tackle the `app/page.tsx` split (Phase 1) when complexity demands
-- Bait registry (mirror of spots) for Phase 6 analytics quality
+- Bait registry (mirror of spots) for Phase 4 analytics quality
 - Image upload for catches
 - Mobile shell
