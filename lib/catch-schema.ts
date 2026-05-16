@@ -18,7 +18,6 @@ export const catchSchema = z.object({
   fjord: z.string(),
   bait: z.string().min(1, 'Bait is required'),
   lengthCm: coerceLengthCm,
-  undersized: z.boolean(),
   notes: z.string(),
   spotId: optionalSpotId,
 });

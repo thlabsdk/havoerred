@@ -4,8 +4,6 @@ import { catchSchema } from '@/lib/catch-schema';
 import { fetchSpots } from '@/lib/spots_repo';
 import type { Spot } from '@/types/spot';
 
-const SEA_TROUT_LEGAL_MIN_CM = 40;
-
 const debugEnabled = () => {
   const v = process.env.DEBUG_AI_PARSE;
   return v === '1' || v === 'true';
@@ -156,14 +154,7 @@ Respond with ONLY the JSON object. No prose, no markdown fences.`;
         ? validation.data.spotId
         : null;
 
-    const result = {
-      ...validation.data,
-      spotId: resolvedSpotId,
-      undersized:
-        validation.data.lengthCm != null && validation.data.lengthCm < SEA_TROUT_LEGAL_MIN_CM,
-    };
-
-    return NextResponse.json(result);
+    return NextResponse.json({ ...validation.data, spotId: resolvedSpotId });
   } catch (error) {
     const isError = error instanceof Error;
     const message = isError ? error.message : String(error);

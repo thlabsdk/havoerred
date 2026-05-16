@@ -68,11 +68,6 @@ describe('catchSchema', () => {
     if (r.success) expect(r.data.lengthCm).toBeNull();
   });
 
-  it('rejects non-boolean undersized', () => {
-    const r = catchSchema.safeParse({ ...validInput, undersized: 'no' });
-    expect(r.success).toBe(false);
-  });
-
   it('accepts null spotId', () => {
     const r = catchSchema.safeParse({ ...validInput, spotId: null });
     expect(r.success).toBe(true);

@@ -35,7 +35,6 @@ export default function CatchesView({
   const [fjord, setFjord] = useState('');
   const [bait, setBait] = useState('');
   const [lengthCm, setLengthCm] = useState<number | null>(null);
-  const [undersized, setUndersized] = useState(false);
   const [notes, setNotes] = useState('');
   const [spotId, setSpotId] = useState<number | null>(null);
 
@@ -57,7 +56,6 @@ export default function CatchesView({
     setFjord('');
     setBait('');
     setLengthCm(null);
-    setUndersized(false);
     setNotes('');
     setSpotId(null);
     setEditingId(null);
@@ -74,7 +72,6 @@ export default function CatchesView({
       fjord,
       bait,
       lengthCm,
-      undersized,
       notes,
       spotId,
     };
@@ -100,7 +97,6 @@ export default function CatchesView({
     setFjord(catchItem.fjord);
     setBait(catchItem.bait);
     setLengthCm(catchItem.lengthCm);
-    setUndersized(catchItem.undersized);
     setNotes(catchItem.notes);
     setSpotId(catchItem.spotId);
   }
@@ -173,7 +169,6 @@ export default function CatchesView({
     setFjord(aiParsedResult.fjord || '');
     setBait(aiParsedResult.bait || '');
     setLengthCm(aiParsedResult.lengthCm || null);
-    setUndersized(aiParsedResult.undersized || false);
     setNotes(aiParsedResult.notes || '');
     setSpotId(aiParsedResult.spotId ?? null);
 
@@ -231,8 +226,6 @@ export default function CatchesView({
           setBait={setBait}
           lengthCm={lengthCm}
           setLengthCm={setLengthCm}
-          undersized={undersized}
-          setUndersized={setUndersized}
           notes={notes}
           setNotes={setNotes}
           spotId={spotId}
@@ -314,9 +307,6 @@ export default function CatchesView({
                     )}
                     {aiParsedResult.lengthCm && (
                       <div><span className="font-semibold text-white">Længde:</span> {aiParsedResult.lengthCm} cm</div>
-                    )}
-                    {aiParsedResult.undersized && (
-                      <div><span className="font-semibold text-white">Undersized:</span> Ja</div>
                     )}
                     {aiParsedResult.notes && (
                       <div><span className="font-semibold text-white">Noter:</span> {aiParsedResult.notes}</div>

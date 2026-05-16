@@ -63,6 +63,7 @@ type CatchOmitForInsert =
   | 'id'
   | 'createdAt'
   | 'updatedAt'
+  | 'undersized'
   | 'enrichmentStatus'
   | 'enrichmentError'
   | 'weatherSource'

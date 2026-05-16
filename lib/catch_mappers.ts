@@ -1,4 +1,5 @@
 import { Catch, CatchFromDB, CatchInsert, CatchUpdate, TidePhase, WaterLevelTrend } from "../types/catch";
+import { deriveUndersized } from "./domain";
 
 export function mapCatchFromDb(catchRow: CatchFromDB): Catch {
   return {
@@ -38,7 +39,7 @@ export function toCatchInsertPayload(catchData: CatchInsert) {
     fjord: catchData.fjord || null,
     bait: catchData.bait,
     length_cm: catchData.lengthCm,
-    undersized: catchData.undersized,
+    undersized: deriveUndersized(catchData.lengthCm),
     notes: catchData.notes,
     spot_id: catchData.spotId ?? null,
   };
@@ -69,10 +70,7 @@ export function toCatchUpdatePayload(catchData: CatchUpdate) {
 
   if (catchData.lengthCm !== undefined) {
     payload.length_cm = catchData.lengthCm;
-  }
-
-  if (catchData.undersized !== undefined) {
-    payload.undersized = catchData.undersized;
+    payload.undersized = deriveUndersized(catchData.lengthCm);
   }
 
   if (catchData.windDirection !== undefined) {

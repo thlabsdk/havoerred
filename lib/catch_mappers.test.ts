@@ -121,7 +121,6 @@ describe('toCatchInsertPayload', () => {
     fjord: 'Roskilde Fjord',
     bait: 'Mepps #3',
     lengthCm: 42,
-    undersized: false,
     notes: 'overcast',
     spotId: 7,
   };
@@ -164,6 +163,26 @@ describe('toCatchInsertPayload', () => {
     expect(payload).not.toHaveProperty('wind_speed_ms');
     expect(payload).not.toHaveProperty('wind_direction');
   });
+
+  it('derives undersized=true when lengthCm is null', () => {
+    const payload = toCatchInsertPayload({ ...baseInsert, lengthCm: null });
+    expect(payload.undersized).toBe(true);
+  });
+
+  it('derives undersized=true when lengthCm < 40', () => {
+    const payload = toCatchInsertPayload({ ...baseInsert, lengthCm: 39 });
+    expect(payload.undersized).toBe(true);
+  });
+
+  it('derives undersized=false when lengthCm === 40', () => {
+    const payload = toCatchInsertPayload({ ...baseInsert, lengthCm: 40 });
+    expect(payload.undersized).toBe(false);
+  });
+
+  it('derives undersized=false when lengthCm > 40', () => {
+    const payload = toCatchInsertPayload({ ...baseInsert, lengthCm: 65 });
+    expect(payload.undersized).toBe(false);
+  });
 });
 
 describe('toCatchUpdatePayload', () => {
@@ -175,9 +194,17 @@ describe('toCatchUpdatePayload', () => {
     expect(toCatchUpdatePayload({ location: 'Hundested' })).toEqual({ location: 'Hundested' });
   });
 
-  it('preserves explicit null lengthCm and false undersized', () => {
-    const payload = toCatchUpdatePayload({ lengthCm: null, undersized: false });
-    expect(payload).toEqual({ length_cm: null, undersized: false });
+  it('derives undersized atomically when lengthCm is updated', () => {
+    expect(toCatchUpdatePayload({ lengthCm: null })).toEqual({ length_cm: null, undersized: true });
+    expect(toCatchUpdatePayload({ lengthCm: 39 })).toEqual({ length_cm: 39, undersized: true });
+    expect(toCatchUpdatePayload({ lengthCm: 40 })).toEqual({ length_cm: 40, undersized: false });
+    expect(toCatchUpdatePayload({ lengthCm: 65 })).toEqual({ length_cm: 65, undersized: false });
+  });
+
+  it('does not touch undersized when lengthCm is not in the update', () => {
+    const payload = toCatchUpdatePayload({ notes: 'updated' });
+    expect(payload).toEqual({ notes: 'updated' });
+    expect(payload).not.toHaveProperty('undersized');
   });
 
   it('treats empty fjord/timeOfDay as null', () => {
@@ -263,7 +290,7 @@ describe('toCatchUpdatePayload', () => {
 });
 
 describe('mapper round-trip', () => {
-  it('mapCatchFromDb then toCatchInsertPayload preserves user-facing data', () => {
+  it('mapCatchFromDb then toCatchInsertPayload preserves user-facing data and re-derives undersized', () => {
     const camel = mapCatchFromDb(baseRow);
     const insertable: CatchInsert = {
       date: camel.date,
@@ -272,7 +299,6 @@ describe('mapper round-trip', () => {
       fjord: camel.fjord,
       bait: camel.bait,
       lengthCm: camel.lengthCm,
-      undersized: camel.undersized,
       notes: camel.notes,
       spotId: camel.spotId,
     };

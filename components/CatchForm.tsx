@@ -31,9 +31,6 @@ type CatchFormProps = {
   lengthCm: number | null;
   setLengthCm: (value: number | null) => void;
 
-  undersized: boolean;
-  setUndersized: (value: boolean) => void;
-
   notes: string;
   setNotes: (value: string) => void;
 
@@ -143,8 +140,6 @@ export default function CatchForm({
   setBait,
   lengthCm,
   setLengthCm,
-  undersized,
-  setUndersized,
   notes,
   setNotes,
   spotId,
@@ -323,20 +318,6 @@ export default function CatchForm({
           />
         </div>
 
-        <div className="flex items-end">
-          <label className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-300 cursor-pointer transition-colors hover:border-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed">
-            <span className="block mb-2 text-sm font-semibold text-slate-300">
-              Undersized
-            </span>
-            <input
-              type="checkbox"
-              checked={undersized}
-              disabled={isDisabled}
-              onChange={(e) => setUndersized(e.target.checked)}
-              className="h-5 w-5 rounded text-cyan-500 focus:ring-cyan-500"
-            />
-          </label>
-        </div>
       </div>
 
       <div>
