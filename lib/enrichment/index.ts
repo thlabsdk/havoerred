@@ -7,6 +7,7 @@ import type {
   EnrichmentStatus,
 } from '../../types/catch';
 import { fetchWeather } from './weather';
+import { fetchWater } from './water';
 
 export type EnrichResult = {
   status: EnrichmentStatus;
@@ -116,37 +117,48 @@ export async function enrichCatch(catchId: number): Promise<EnrichResult> {
   }
 
   const hour = current.timeOfDay ? parseHour(current.timeOfDay) : FALLBACK_HOUR;
+  const lookup = { latitude, longitude, isoDate, hour };
 
-  const outcome = await fetchWeather({ latitude, longitude, isoDate, hour });
+  // Providers are independent, IO-bound, no shared mutable state — run in
+  // parallel to reduce enrichment latency. Each returns ProviderOutcome and
+  // never throws, so isolation semantics are preserved.
+  const [weatherOutcome, waterOutcome] = await Promise.all([
+    fetchWeather(lookup),
+    fetchWater(lookup),
+  ]);
 
-  if (!outcome.ok) {
-    console.error(`${tag(catchId)} provider failed:`, outcome.error);
-    const patched = await patchCatch(catchId, {
-      enrichmentStatus: 'failed',
-      enrichmentError: outcome.error,
-    });
-    return { status: 'failed', catch: patched };
+  const patch: Partial<EnrichmentPatch> = {};
+
+  if (weatherOutcome.ok) {
+    const r = weatherOutcome.data;
+    patch.weatherSource = r.weatherSource;
+    patch.weatherFetchedAt = r.weatherFetchedAt;
+    patch.windDirection = r.windDirection;
+    patch.windSpeedMs = r.windSpeedMs;
+    patch.airTemperatureC = r.airTemperatureC;
+    patch.weatherCode = r.weatherCode;
   }
 
-  const reading = outcome.data;
-  const patched = await patchCatch(catchId, {
-    enrichmentStatus: 'enriched',
-    enrichmentError: null,
-    weatherSource: reading.weatherSource,
-    weatherFetchedAt: reading.weatherFetchedAt,
-    windDirection: reading.windDirection,
-    windSpeedMs: reading.windSpeedMs,
-    airTemperatureC: reading.airTemperatureC,
-    weatherCode: reading.weatherCode,
+  if (waterOutcome.ok) {
+    const r = waterOutcome.data;
+    patch.waterSource = r.waterSource;
+    patch.waterFetchedAt = r.waterFetchedAt;
+    patch.waterLevelTrend = r.waterLevelTrend;
+    patch.tidePhase = r.tidePhase;
+  }
+
+  const anyOk = weatherOutcome.ok || waterOutcome.ok;
+  patch.enrichmentStatus = anyOk ? 'enriched' : 'failed';
+  patch.enrichmentError = anyOk
+    ? null
+    : `${weatherOutcome.ok ? '' : weatherOutcome.error} | ${waterOutcome.ok ? '' : waterOutcome.error}`;
+
+  const patched = await patchCatch(catchId, patch);
+
+  console.log(`${tag(catchId)} done`, {
+    weather: weatherOutcome.ok ? 'ok' : weatherOutcome.error,
+    water: waterOutcome.ok ? 'ok' : waterOutcome.error,
   });
 
-  console.log(`${tag(catchId)} enriched ok`, {
-    source: reading.weatherSource,
-    windDirection: reading.windDirection,
-    windSpeedMs: reading.windSpeedMs,
-    airTemperatureC: reading.airTemperatureC,
-    weatherCode: reading.weatherCode,
-  });
-
-  return { status: 'enriched', catch: patched };
+  return { status: patch.enrichmentStatus, catch: patched };
 }

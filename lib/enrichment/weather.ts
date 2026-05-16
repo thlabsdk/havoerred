@@ -25,9 +25,9 @@ const daysBetween = (isoDate: string, today: Date): number => {
 const pickEndpoint = (isoDate: string): { base: string; source: string } => {
   const ageDays = daysBetween(isoDate, new Date());
   if (ageDays > RECENT_DAY_THRESHOLD) {
-    return { base: ARCHIVE_BASE, source: 'open-meteo:archive' };
+    return { base: ARCHIVE_BASE, source: 'open-meteo:archive:v1' };
   }
-  return { base: FORECAST_BASE, source: 'open-meteo:forecast' };
+  return { base: FORECAST_BASE, source: 'open-meteo:forecast:v1' };
 };
 
 const buildUrl = (base: string, lookup: WeatherLookup): string => {

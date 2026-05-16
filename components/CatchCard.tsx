@@ -20,6 +20,8 @@ function renderEnrichmentLine(c: Catch): string {
       if (c.airTemperatureC !== null) parts.push(`${Math.round(c.airTemperatureC)}°C`);
       if (c.windDirection) parts.push(c.windDirection);
       if (c.windSpeedMs !== null) parts.push(`${c.windSpeedMs.toFixed(1)} m/s`);
+      if (c.waterLevelTrend === 'rising') parts.push('stigende vand');
+      if (c.waterLevelTrend === 'falling') parts.push('faldende vand');
       return parts.length > 0 ? `Vejr: ${parts.join(' · ')}` : 'Vejr: ingen data';
     }
   }

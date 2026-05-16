@@ -19,11 +19,15 @@ const baseRow: CatchFromDB = {
 
   enrichment_status: 'enriched',
   enrichment_error: null,
-  weather_source: 'open-meteo:archive',
+  weather_source: 'open-meteo:archive:v1',
   weather_fetched_at: '2026-05-14T10:05:00Z',
   wind_speed_ms: 4.2,
   air_temperature_c: 8.1,
   weather_code: '61',
+  water_source: 'open-meteo:marine:v1',
+  water_fetched_at: '2026-05-14T10:05:00Z',
+  water_level_trend: 'rising',
+  tide_phase: 'high',
 };
 
 describe('mapCatchFromDb', () => {
@@ -44,11 +48,15 @@ describe('mapCatchFromDb', () => {
       updatedAt: '2026-05-14T10:00:00Z',
       enrichmentStatus: 'enriched',
       enrichmentError: null,
-      weatherSource: 'open-meteo:archive',
+      weatherSource: 'open-meteo:archive:v1',
       weatherFetchedAt: '2026-05-14T10:05:00Z',
       windSpeedMs: 4.2,
       airTemperatureC: 8.1,
       weatherCode: '61',
+      waterSource: 'open-meteo:marine:v1',
+      waterFetchedAt: '2026-05-14T10:05:00Z',
+      waterLevelTrend: 'rising',
+      tidePhase: 'high',
     });
   });
 
@@ -89,12 +97,19 @@ describe('mapCatchFromDb', () => {
       wind_speed_ms: null,
       air_temperature_c: null,
       weather_code: null,
+      water_source: null,
+      water_fetched_at: null,
+      water_level_trend: null,
+      tide_phase: null,
     });
     expect(pending.enrichmentStatus).toBe('pending');
     expect(pending.weatherSource).toBeNull();
     expect(pending.windSpeedMs).toBeNull();
     expect(pending.airTemperatureC).toBeNull();
     expect(pending.weatherCode).toBeNull();
+    expect(pending.waterSource).toBeNull();
+    expect(pending.waterLevelTrend).toBeNull();
+    expect(pending.tidePhase).toBeNull();
   });
 });
 
@@ -191,22 +206,46 @@ describe('toCatchUpdatePayload', () => {
     const payload = toCatchUpdatePayload({
       enrichmentStatus: 'enriched',
       enrichmentError: null,
-      weatherSource: 'open-meteo:archive',
+      weatherSource: 'open-meteo:archive:v1',
       weatherFetchedAt: '2026-05-14T10:05:00Z',
       windDirection: 'SV',
       windSpeedMs: 4.2,
       airTemperatureC: 8.1,
       weatherCode: '61',
+      waterSource: 'open-meteo:marine:v1',
+      waterFetchedAt: '2026-05-14T10:05:00Z',
+      waterLevelTrend: 'rising',
+      tidePhase: 'high',
     });
     expect(payload).toEqual({
       enrichment_status: 'enriched',
       enrichment_error: null,
-      weather_source: 'open-meteo:archive',
+      weather_source: 'open-meteo:archive:v1',
       weather_fetched_at: '2026-05-14T10:05:00Z',
       wind_direction: 'SV',
       wind_speed_ms: 4.2,
       air_temperature_c: 8.1,
       weather_code: '61',
+      water_source: 'open-meteo:marine:v1',
+      water_fetched_at: '2026-05-14T10:05:00Z',
+      water_level_trend: 'rising',
+      tide_phase: 'high',
+    });
+  });
+
+  it('includes a water-only patch when weather is missing', () => {
+    expect(
+      toCatchUpdatePayload({
+        waterSource: 'open-meteo:marine:v1',
+        waterFetchedAt: '2026-05-14T10:05:00Z',
+        waterLevelTrend: 'falling',
+        tidePhase: null,
+      })
+    ).toEqual({
+      water_source: 'open-meteo:marine:v1',
+      water_fetched_at: '2026-05-14T10:05:00Z',
+      water_level_trend: 'falling',
+      tide_phase: null,
     });
   });
 

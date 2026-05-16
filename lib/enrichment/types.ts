@@ -1,3 +1,5 @@
+import type { TidePhase, WaterLevelTrend } from '../../types/catch';
+
 export type WeatherReading = {
   weatherSource: string;
   weatherFetchedAt: string;
@@ -5,6 +7,13 @@ export type WeatherReading = {
   windSpeedMs: number | null;
   airTemperatureC: number | null;
   weatherCode: string | null;
+};
+
+export type WaterReading = {
+  waterSource: string;
+  waterFetchedAt: string;
+  waterLevelTrend: WaterLevelTrend | null;
+  tidePhase: TidePhase | null;
 };
 
 export type ProviderOutcome<T> =

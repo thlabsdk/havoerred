@@ -1,5 +1,8 @@
 export type EnrichmentStatus = 'pending' | 'enriched' | 'failed' | 'skipped';
 
+export type WaterLevelTrend = 'rising' | 'falling' | 'stable';
+export type TidePhase = 'high' | 'low';
+
 export type Catch = {
   id: number;
   date: string;
@@ -22,6 +25,10 @@ export type Catch = {
   windSpeedMs: number | null;
   airTemperatureC: number | null;
   weatherCode: string | null;
+  waterSource: string | null;
+  waterFetchedAt: string | null;
+  waterLevelTrend: WaterLevelTrend | null;
+  tidePhase: TidePhase | null;
 };
 
 export type CatchFromDB = {
@@ -46,6 +53,10 @@ export type CatchFromDB = {
   wind_speed_ms: number | null;
   air_temperature_c: number | null;
   weather_code: string | null;
+  water_source: string | null;
+  water_fetched_at: string | null;
+  water_level_trend: string | null;
+  tide_phase: string | null;
 };
 
 type CatchOmitForInsert =
@@ -59,7 +70,11 @@ type CatchOmitForInsert =
   | 'windDirection'
   | 'windSpeedMs'
   | 'airTemperatureC'
-  | 'weatherCode';
+  | 'weatherCode'
+  | 'waterSource'
+  | 'waterFetchedAt'
+  | 'waterLevelTrend'
+  | 'tidePhase';
 
 export type CatchInsert = Omit<Catch, CatchOmitForInsert>;
 
@@ -76,4 +91,8 @@ export type EnrichmentPatch = {
   windSpeedMs: number | null;
   airTemperatureC: number | null;
   weatherCode: string | null;
+  waterSource: string | null;
+  waterFetchedAt: string | null;
+  waterLevelTrend: WaterLevelTrend | null;
+  tidePhase: TidePhase | null;
 };

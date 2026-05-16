@@ -1,4 +1,4 @@
-import { Catch, CatchFromDB, CatchInsert, CatchUpdate } from "../types/catch";
+import { Catch, CatchFromDB, CatchInsert, CatchUpdate, TidePhase, WaterLevelTrend } from "../types/catch";
 
 export function mapCatchFromDb(catchRow: CatchFromDB): Catch {
   return {
@@ -23,6 +23,10 @@ export function mapCatchFromDb(catchRow: CatchFromDB): Catch {
     windSpeedMs: catchRow.wind_speed_ms,
     airTemperatureC: catchRow.air_temperature_c,
     weatherCode: catchRow.weather_code,
+    waterSource: catchRow.water_source,
+    waterFetchedAt: catchRow.water_fetched_at,
+    waterLevelTrend: catchRow.water_level_trend as WaterLevelTrend | null,
+    tidePhase: catchRow.tide_phase as TidePhase | null,
   };
 }
 
@@ -109,6 +113,22 @@ export function toCatchUpdatePayload(catchData: CatchUpdate) {
 
   if (catchData.weatherCode !== undefined) {
     payload.weather_code = catchData.weatherCode;
+  }
+
+  if (catchData.waterSource !== undefined) {
+    payload.water_source = catchData.waterSource;
+  }
+
+  if (catchData.waterFetchedAt !== undefined) {
+    payload.water_fetched_at = catchData.waterFetchedAt;
+  }
+
+  if (catchData.waterLevelTrend !== undefined) {
+    payload.water_level_trend = catchData.waterLevelTrend;
+  }
+
+  if (catchData.tidePhase !== undefined) {
+    payload.tide_phase = catchData.tidePhase;
   }
 
   return payload;
