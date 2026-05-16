@@ -60,6 +60,11 @@ type OpenMeteoResponse = {
 export async function fetchWeather(
   lookup: WeatherLookup
 ): Promise<ProviderOutcome<WeatherReading>> {
+  if (process.env.TEST_WEATHER_FAIL === 'true') {
+    logError('forced failure via TEST_WEATHER_FAIL');
+    return { ok: false, error: 'forced failure via TEST_WEATHER_FAIL' };
+  }
+
   const { base, source } = pickEndpoint(lookup.isoDate);
   const url = buildUrl(base, lookup);
 

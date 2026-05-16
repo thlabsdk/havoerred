@@ -93,6 +93,11 @@ const deriveTidePhase = (
 export async function fetchWater(
   lookup: WeatherLookup
 ): Promise<ProviderOutcome<WaterReading>> {
+  if (process.env.TEST_WATER_FAIL === 'true') {
+    logError('forced failure via TEST_WATER_FAIL');
+    return { ok: false, error: 'forced failure via TEST_WATER_FAIL' };
+  }
+
   const url = buildUrl(lookup);
 
   log('request', {
