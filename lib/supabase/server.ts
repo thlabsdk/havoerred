@@ -1,22 +1,55 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+// lib/supabase/server.ts
+import { createClient as createSupabaseServiceClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
-let cached: SupabaseClient | null = null;
+let cached: SupabaseClient | null = null
 
 export function getSupabaseServer(): SupabaseClient {
-  if (cached) return cached;
+  if (cached) return cached
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!url) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL')
   }
   if (!serviceKey) {
-    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY (required for server-side writes)');
+    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY (required for server-side writes)')
   }
 
-  cached = createClient(url, serviceKey, {
+  cached = createSupabaseServiceClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
-  });
-  return cached;
+  })
+  return cached
+}
+
+// Use this in Server Components, Route Handlers, and middleware.
+// Must be awaited — cookies() is async in Next.js 16.
+export async function createClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+
+  const cookieStore = await cookies()
+
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        } catch {
+          // Expected in Server Component render — safe to ignore.
+        }
+      },
+    },
+  })
 }
