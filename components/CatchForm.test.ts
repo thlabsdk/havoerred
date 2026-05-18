@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDateInput } from './CatchForm';
+import { formatDateInput, parseLengthInput } from './CatchForm';
 
 describe('formatDateInput', () => {
   it('returns empty string for empty input', () => {
@@ -52,5 +52,27 @@ describe('formatDateInput', () => {
 
   it('formats correctly when raw value ends with slash (backspace past slash)', () => {
     expect(formatDateInput('12/')).toBe('12');
+  });
+});
+
+describe('parseLengthInput', () => {
+  it('returns null for empty string', () => {
+    expect(parseLengthInput('')).toBeNull();
+  });
+
+  it('returns number for digit string', () => {
+    expect(parseLengthInput('67')).toBe(67);
+  });
+
+  it('strips non-digit suffix noise', () => {
+    expect(parseLengthInput('67cm')).toBe(67);
+  });
+
+  it('strips negative sign', () => {
+    expect(parseLengthInput('-5')).toBe(5);
+  });
+
+  it('returns null for all non-digits', () => {
+    expect(parseLengthInput('abc')).toBeNull();
   });
 });

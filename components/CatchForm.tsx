@@ -54,6 +54,11 @@ export function formatDateInput(raw: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
+export function parseLengthInput(raw: string): number | null {
+  const digits = raw.replace(/\D/g, '');
+  return digits === '' ? null : Number(digits);
+}
+
 const validateDate = (dateStr: string): string | undefined => {
   if (!dateStr.trim()) {
     return 'Dato er påkrævet';
@@ -293,15 +298,13 @@ export default function CatchForm({
           </label>
 
           <input
-            type="number"
-            min={0}
-            step={1}
-            value={lengthCm ?? ''}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={3}
+            value={lengthCm !== null ? String(lengthCm) : ''}
             disabled={isDisabled}
-            onChange={(e) => {
-              const value = e.target.value;
-              setLengthCm(value === '' ? null : Number(value));
-            }}
+            onChange={(e) => setLengthCm(parseLengthInput(e.target.value))}
             placeholder="Fx 67"
             className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed"
           />
