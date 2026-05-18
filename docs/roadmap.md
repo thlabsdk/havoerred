@@ -166,15 +166,11 @@ The focus was entirely:
 
 Users can now type:
 
-```text
 12052026
-```
 
 and the field formats live into:
 
-```text
 12/05/2026
-```
 
 Implemented with:
 
@@ -208,9 +204,7 @@ Results:
 
 The length field now uses:
 
-```text
-type="text" + inputMode="numeric"
-```
+`type="text" + inputMode="numeric"`
 
 instead of `type="number"`.
 
@@ -283,6 +277,59 @@ The next wave of improvements should come primarily from:
 
 ---
 
+# Operational Stabilization Priorities
+
+As the system transitions from prototype-phase into operational usage, the next
+priorities are focused on robustness, consistency, and explicit system
+boundaries rather than large feature expansion.
+
+## Current operational focus areas
+
+### Enrichment reliability
+
+The enrichment pipeline is currently frontend-triggered after insert.
+
+This architecture is intentionally simple and operationally lightweight, but it
+introduces a known risk:
+
+> if the frontend enrichment trigger fails silently, enrichment does not run.
+
+Current priorities:
+
+* observe enrichment reliability during real-world use
+* improve visibility into skipped/failed enrichments
+* evaluate whether retry behavior is needed
+* avoid introducing queue complexity prematurely
+
+### Auth vs database boundary
+
+Authentication is operational, but owner-scoped RLS policies are not yet
+enabled.
+
+This is currently acceptable during the single-user operational phase, but is
+now considered explicit technical debt rather than a future abstraction.
+
+### Transitional schema areas
+
+Some schema decisions are now transitional rather than foundational.
+
+Most notably:
+
+* `catches.date` still stored as TEXT
+* analytics views now perform date parsing/coercion
+* long-term migration toward typed DATE fields is expected
+
+Migration timing remains intentionally deferred until operational usage patterns
+stabilize further.
+
+### Middleware/runtime verification
+
+The auth gate currently compiles successfully but the runtime wiring should be
+explicitly verified to ensure middleware/proxy behavior matches current
+Next.js conventions.
+
+---
+
 # Upcoming Directions
 
 These are now considered likely future directions, but not all are immediate sprint candidates.
@@ -305,13 +352,13 @@ Likely future capabilities:
 
 * searchable catch table
 * filtering by:
-
   * spot
   * bait
   * tide phase
   * wind
   * date range
   * undersized
+
 * saved query views
 * SQL-oriented analytics foundation
 
@@ -333,11 +380,9 @@ One of the strongest future directions identified so far:
 
 Example:
 
-```text
 Fangede en havørred ved Kyndby kl 21.
 Bombarda med Guldbassen.
 Under mål.
-```
 
 Potential flow:
 
@@ -418,19 +463,19 @@ The project is currently following these principles intentionally:
 
 ## Platform
 
-Stable.
+Operational and actively used.
 
 ## Deployment
 
-Operational.
+Separate STL runtime operational at `trout.thlabs.dk`.
 
 ## Auth
 
-Operational.
+Operational SSR auth with middleware gating and magic-link flow.
 
 ## Enrichment
 
-Operational.
+Operational with partial-success persistence and fault isolation.
 
 ## Capture UX
 
@@ -439,3 +484,10 @@ Significantly improved after Sprint 4.
 ## Product Direction
 
 Increasingly clear and coherent.
+
+## Known Operational Debt
+
+* RLS not yet enabled
+* enrichment pipeline frontend-triggered
+* transitional TEXT date storage
+* middleware/proxy verification pending
