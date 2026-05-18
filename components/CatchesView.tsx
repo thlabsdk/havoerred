@@ -8,6 +8,11 @@ import type { Catch, CatchInsert, CatchUpdate } from '../types/catch';
 import type { Spot } from '../types/spot';
 import { type CatchFormData } from '../lib/catch-schema';
 
+export function deriveFjord(spots: Spot[], spotId: number | null): string {
+  if (spotId === null) return '';
+  return spots.find((s) => s.id === spotId)?.bodyOfWater ?? '';
+}
+
 type ToastFn = (text: string, type: 'success' | 'error') => void;
 
 type CatchesViewProps = {
@@ -32,7 +37,6 @@ export default function CatchesView({
   const [date, setDate] = useState('');
   const [timeOfDay, setTimeOfDay] = useState('');
   const [location, setLocation] = useState('');
-  const [fjord, setFjord] = useState('');
   const [bait, setBait] = useState('');
   const [lengthCm, setLengthCm] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
@@ -53,7 +57,6 @@ export default function CatchesView({
     setDate('');
     setTimeOfDay('');
     setLocation('');
-    setFjord('');
     setBait('');
     setLengthCm(null);
     setNotes('');
@@ -69,7 +72,7 @@ export default function CatchesView({
       date,
       timeOfDay,
       location,
-      fjord,
+      fjord: deriveFjord(spots, spotId),
       bait,
       lengthCm,
       notes,
@@ -94,7 +97,6 @@ export default function CatchesView({
     setDate(catchItem.date);
     setTimeOfDay(catchItem.timeOfDay);
     setLocation(catchItem.location);
-    setFjord(catchItem.fjord);
     setBait(catchItem.bait);
     setLengthCm(catchItem.lengthCm);
     setNotes(catchItem.notes);
@@ -166,7 +168,6 @@ export default function CatchesView({
     setDate(aiParsedResult.date || '');
     setTimeOfDay(aiParsedResult.timeOfDay || '');
     setLocation(aiParsedResult.location || '');
-    setFjord(aiParsedResult.fjord || '');
     setBait(aiParsedResult.bait || '');
     setLengthCm(aiParsedResult.lengthCm || null);
     setNotes(aiParsedResult.notes || '');
@@ -220,8 +221,6 @@ export default function CatchesView({
           setTimeOfDay={setTimeOfDay}
           location={location}
           setLocation={setLocation}
-          fjord={fjord}
-          setFjord={setFjord}
           bait={bait}
           setBait={setBait}
           lengthCm={lengthCm}

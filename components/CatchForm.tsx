@@ -22,9 +22,6 @@ type CatchFormProps = {
   location: string;
   setLocation: (value: string) => void;
 
-  fjord: string;
-  setFjord: (value: string) => void;
-
   bait: string;
   setBait: (value: string) => void;
 
@@ -141,8 +138,6 @@ export default function CatchForm({
   setTimeOfDay,
   location,
   setLocation,
-  fjord,
-  setFjord,
   bait,
   setBait,
   lengthCm,
@@ -259,7 +254,6 @@ export default function CatchForm({
           }
         }}
         currentLocationText={location}
-        currentFjordText={fjord}
         onCreateSpot={onCreateSpot}
         isDisabled={isDisabled}
       />
@@ -290,21 +284,6 @@ export default function CatchForm({
         {errors.location && (
           <p className="mt-1 text-sm text-red-400">{errors.location}</p>
         )}
-      </div>
-
-      <div>
-        <label className="block mb-2 text-sm font-semibold text-slate-300">
-          Fjord
-        </label>
-
-        <input
-          type="text"
-          value={fjord}
-          disabled={isDisabled}
-          onChange={(e) => setFjord(e.target.value)}
-          placeholder="Fx Roskilde Fjord"
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed"
-        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

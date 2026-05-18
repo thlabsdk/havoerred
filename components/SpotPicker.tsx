@@ -8,7 +8,6 @@ type SpotPickerProps = {
   selectedSpotId: number | null;
   onChange: (spotId: number | null, spotName: string | null) => void;
   currentLocationText: string;
-  currentFjordText: string;
   onCreateSpot: (name: string, bodyOfWater: string) => Promise<Spot | null>;
   isDisabled?: boolean;
 };
@@ -18,7 +17,6 @@ export default function SpotPicker({
   selectedSpotId,
   onChange,
   currentLocationText,
-  currentFjordText,
   onCreateSpot,
   isDisabled = false,
 }: SpotPickerProps) {
@@ -35,7 +33,7 @@ export default function SpotPicker({
     if (!trimmedLocation || creating) return;
     setCreating(true);
     try {
-      const newSpot = await onCreateSpot(trimmedLocation, currentFjordText.trim());
+      const newSpot = await onCreateSpot(trimmedLocation, '');
       if (newSpot) onChange(newSpot.id, newSpot.name);
     } finally {
       setCreating(false);
