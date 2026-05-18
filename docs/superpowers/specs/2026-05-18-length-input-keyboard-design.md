@@ -117,7 +117,7 @@ Five cases. The `"6.7" → 67` transformation is intentionally NOT tested: it is
 
 ## Success Criteria
 
-1. Mobile numpad on the length field shows digit keys only (no decimal, no negative)
+1. Length field shows the platform's numeric keypad on mobile
 2. Typing `67` sets `lengthCm` to `67`
 3. Clearing the field sets `lengthCm` to `null`
 4. Pasting `"67cm"` produces `67`
