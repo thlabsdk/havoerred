@@ -200,6 +200,8 @@ export default function CatchForm({
             value={date}
             disabled={isDisabled}
             inputMode="numeric"
+            autoComplete="off"
+            maxLength={10}
             onChange={(e) => {
               setDate(formatDateInput(e.target.value));
               if (errors.date) {

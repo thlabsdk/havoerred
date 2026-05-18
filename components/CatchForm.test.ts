@@ -49,4 +49,8 @@ describe('formatDateInput', () => {
   it('caps at 8 digits even with extra input', () => {
     expect(formatDateInput('1205202699')).toBe('12/05/2026');
   });
+
+  it('formats correctly when raw value ends with slash (backspace past slash)', () => {
+    expect(formatDateInput('12/')).toBe('12');
+  });
 });
