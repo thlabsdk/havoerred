@@ -263,33 +263,35 @@ export default function CatchForm({
         isDisabled={isDisabled}
       />
 
-      <div>
-        <label className="block mb-2 text-sm font-semibold text-slate-300">
-          Sted (fritekst)
-        </label>
+      {spotId === null && (
+        <div>
+          <label className="block mb-2 text-sm font-semibold text-slate-300">
+            Sted (fritekst)
+          </label>
 
-        <input
-          type="text"
-          value={location}
-          disabled={isDisabled}
-          onChange={(e) => {
-            setLocation(e.target.value);
-            if (spotId !== null) setSpotId(null);
-            if (errors.location) {
-              clearFieldError('location');
-            }
-          }}
-          placeholder="Fx Kyndby"
-          className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-            errors.location
-              ? 'border-red-500 focus:ring-red-500'
-              : 'border-slate-700 focus:ring-cyan-500'
-          }`}
-        />
-        {errors.location && (
-          <p className="mt-1 text-sm text-red-400">{errors.location}</p>
-        )}
-      </div>
+          <input
+            type="text"
+            value={location}
+            disabled={isDisabled}
+            onChange={(e) => {
+              setLocation(e.target.value);
+              if (spotId !== null) setSpotId(null);
+              if (errors.location) {
+                clearFieldError('location');
+              }
+            }}
+            placeholder="Fx Kyndby"
+            className={`w-full bg-slate-800 border rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+              errors.location
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-slate-700 focus:ring-cyan-500'
+            }`}
+          />
+          {errors.location && (
+            <p className="mt-1 text-sm text-red-400">{errors.location}</p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
