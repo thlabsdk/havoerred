@@ -11,7 +11,20 @@
       "Skill(andrej-karpathy-skills:karpathy-guidelines)",
       "Bash(Select-Object Name, PSIsContainer)",
       "Bash(npx vitest *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Bash(npm run *)",
+      "Skill(superpowers:brainstorming)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Skill(superpowers:requesting-code-review)",
+      "Bash(git show *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(git *)"
     ]
   }
 }
