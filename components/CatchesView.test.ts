@@ -47,4 +47,8 @@ describe('deriveFjord', () => {
   it('returns empty string when spotId is not in the spots list', () => {
     expect(deriveFjord(SPOTS, 999)).toBe('');
   });
+
+  it('returns empty string when spots list is empty', () => {
+    expect(deriveFjord([], 1)).toBe('');
+  });
 });
