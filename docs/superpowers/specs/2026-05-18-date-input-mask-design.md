@@ -39,6 +39,10 @@ digits 1-8   → dd/mm/yyyy
 | Types `12052026` | `12052026` | `12/05/2026` |
 | Pastes `12-05-2026` | `12-05-2026` | `12/05/2026` |
 | Pastes `12.05.2026` | `12.05.2026` | `12/05/2026` |
+| Pastes ` 12/05/2026 ` (whitespace) | ` 12/05/2026 ` | `12/05/2026` |
+| Pastes ` 12052026 ` (whitespace) | ` 12052026 ` | `12/05/2026` |
+
+Leading/trailing whitespace is accepted input noise — stripped implicitly by `replace(/\D/g, '')` since spaces are non-digits. No special handling required.
 
 ### Partial entry while typing
 
