@@ -14,6 +14,8 @@ The catch form contains a manual Fjord text input. This is redundant: every know
 
 Remove the Fjord input from the catch form entirely. Derive `fjord` automatically at the submit boundary — only when a spot is selected. Unspotted catches store `''` as fjord.
 
+Structured geographic metadata should derive only from structured spot entities.
+
 ## Scope
 
 Three files. No new files, no type changes, no DB schema changes.
