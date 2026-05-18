@@ -50,6 +50,13 @@ type CatchFormProps = {
   isDisabled?: boolean;
 };
 
+export function formatDateInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 const validateDate = (dateStr: string): string | undefined => {
   if (!dateStr.trim()) {
     return 'Dato er påkrævet';
@@ -192,8 +199,9 @@ export default function CatchForm({
             type="text"
             value={date}
             disabled={isDisabled}
+            inputMode="numeric"
             onChange={(e) => {
-              setDate(e.target.value);
+              setDate(formatDateInput(e.target.value));
               if (errors.date) {
                 clearFieldError('date');
               }
