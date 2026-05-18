@@ -1,114 +1,441 @@
-# Roadmap
+# Sea Trout Log — Roadmap
 
-## Completed milestones
+*Last updated after Sprint 4 completion.*
 
-- Next.js 16 application scaffolded
-- Supabase client integrated
-- `catches` table created and mapped to frontend models
-- JSON import/export pipeline implemented
-- Basic catch CRUD workflows available
-- OpenAI parse route and AI parsing flow added
-- **Phase 0 — foundations**:
-  - `.env.example` documented
-  - Vitest set up with mapper + schema coverage
-  - AI route hardened: `response_format: json_object`, deterministic
-    `undersized`, `lengthCm` coercion, date format validation, prompt/schema
-    null-vs-empty contract reconciled, model configurable via
-    `OPENAI_PARSE_MODEL`, verbose logs gated behind `DEBUG_AI_PARSE`,
-    dropped the `as any` cast
-- **Phase 2 — spot registry**:
-  - `spots` table with canonical name + aliases + body of water + lat/lng + owner
-  - `catches.spot_id` FK
-  - `SpotPicker` UI + create-from-text flow
-  - AI prompt now receives the user's spots and resolves matches to `spotId`
-  - Defensive id validation against hallucinated ids
-  - Test coverage for spot mappers + spotId behavior in catch schema/mappers
-- **Phase 3 — enrichment pipeline**:
-  - Weather enrichment via Open-Meteo (archive + forecast endpoints based on
-    catch date), populating `wind_speed_ms`, `air_temperature_c`,
-    `weather_code`, `weather_source`, `weather_fetched_at`
-  - Water enrichment via Open-Meteo Marine (sea-level MSL) deriving
-    `water_level_trend` and `tide_phase` heuristically
-  - Async orchestration: both providers run in parallel, each returns a
-    `ProviderOutcome<T>` so one failure can't take down the other
-  - Partial success persistence: `enriched` if either source succeeds,
-    `failed` only when both fail; errors concatenated into `enrichment_error`
-  - Fault injection via `TEST_WEATHER_FAIL` / `TEST_WATER_FAIL` env vars for
-    exercising partial-success and failure paths
-  - Idempotency: already-`enriched` rows short-circuit before any external IO
-  - `/api/enrich-catch` route fired from the client after insert
+---
 
-## Skipped/deferred
+# Current Product Direction
 
-- **Phase 1 — page split**: largely addressed by the UI architecture refactor
-  (see below). `app/page.tsx` is now a slim coordinator owning persisted state
-  and CRUD callbacks only; modals and form state moved into per-tab views.
+Sea Trout Log is evolving toward:
 
-## UI architecture refactor (done)
+> a structured field intelligence system for sea trout fishing
 
-Concern separation by domain, no heavy admin framework, no new routing:
+—not a social fishing app, not a dashboard product, and not primarily a map application.
 
-- Three tabs: **Fangster** (single-catch), **Bulk** (catch import/export),
-  **Steder** (spot CRUD + import/export).
-- `app/page.tsx` is a coordinator (~220 lines) — state, callbacks, view
-  dispatch. No form state, no modal state.
-- View components: `CatchesView`, `BulkOpsView`, `SpotsView`.
-- Spot management: list, inline create form, edit modal, delete confirm,
-  JSON paste import, JSON export.
-- Aliases are first-class in the spot form (textarea, one per line), feeding
-  the AI prompt's entity resolution.
-- Spot import uses the same architecture as catches: typed models, Zod
-  validation (`spotSchema`), mapper layer, tolerant per-row import.
+The core priority is now:
 
-## Upcoming features
+* fast field capture
+* low-friction logging
+* structured operational data
+* reliable enrichment
+* mobile-first ergonomics
+* entity-driven metadata
 
-- Phase 4 — queryability + analytics foundation (SQL-first)
-- Phase 5 — map-based catch visualization
-- Phase 6 — auth + RLS
-- Future exploration — "Ask your log" / RAG over the entity tables
+The system is intentionally becoming:
 
-## Phase 4 — queryability + analytics foundation (next)
+* more structured
+* less form-heavy
+* less redundant
+* more operational
 
-SQL-first exploration over the enriched data. No dashboards, no charting
-framework — the goal is to be able to ask correlation questions and answer
-them with a query.
+Deployment, auth, and runtime separation are now considered stable foundations.
 
-- Analytics-oriented views in Supabase (e.g. `catches_enriched`) that join
-  catches + spots and surface enrichment columns in one row
-- Nullable-safe derived fields (e.g. month/season buckets, undersized flag,
-  wind-direction sector, has-weather / has-water predicates) so partial
-  enrichment doesn't poison aggregates
-- Correlation-ready shape: one row per catch with the dimensions you'd group
-  by — spot, bait, wind sector, tide phase, water trend, time of day
-- Exploratory filtering from the existing UI list (date range, bait, spot,
-  enrichment status) before any dedicated analytics surface
-- Lightweight smoke queries committed alongside the views so the shape is
-  documented and reproducible
+---
 
-## Phase 5 — maps
+# Completed Milestones
 
-- Geocode spots that lack lat/lng (manual entry first, then a lookup service)
-- Leaflet or MapLibre map view rendering `spots` with catch markers
-- Filter by date range / bait / undersized
+## Platform & Infrastructure
 
-## Phase 6 — auth + RLS
+* Next.js 16 application scaffolded
+* Supabase integrated
+* Separate STL deployment established at `trout.thlabs.dk`
+* SSR auth implemented using `@supabase/ssr`
+* Middleware-based auth gate
+* Magic-link authentication flow
+* Custom SMTP configured and operational
+* Separate runtime from THLabs platform proven
+* THLabs registry integration completed
+* Project detail page + external project handoff working
 
-Deferred while this stays a single-user/private learning project.
+---
 
-- Supabase Auth (email + Google)
-- Populate `owner_user_id` on `spots` and `catches`
-- RLS policies (owner-only read/write)
-- Auth-protect `/api/parse-catch` and `/api/enrich-catch`
+## Catch System Foundations
 
-## Future exploration
+* `catches` table created and mapped to frontend models
+* Basic catch CRUD workflows implemented
+* JSON import/export pipeline implemented
+* OpenAI parse route + AI parsing flow implemented
 
-- "Ask your log" — RAG over your own catches using the entity tables
-  (spots, baits, enriched conditions). Not on the near-term roadmap; waits
-  on Phase 4 giving the data a clean queryable shape first.
+### AI parsing hardening
 
-## Cross-cutting
+* `response_format: json_object`
+* deterministic parse behavior
+* `undersized` coercion
+* `lengthCm` coercion
+* date validation
+* configurable parse model
+* debug logging gates
+* schema normalization improvements
 
-- Re-tackle the `app/page.tsx` split (Phase 1) when complexity demands
-- Bait registry (mirror of spots) for Phase 4 analytics quality
-- Image upload for catches
-- Mobile shell
+---
+
+## Spot Registry System
+
+* `spots` table implemented
+* canonical spot names
+* aliases
+* body of water metadata
+* lat/lng support
+* owner support
+* `catches.spot_id` foreign key
+* SpotPicker UI
+* inline spot creation flow
+* AI spot matching against user spots
+* hallucinated ID defense
+* spot mapper + schema test coverage
+
+---
+
+## Enrichment Pipeline
+
+### Weather enrichment
+
+Via Open-Meteo:
+
+* wind speed
+* air temperature
+* weather code
+* weather metadata persistence
+
+### Water enrichment
+
+Via Open-Meteo Marine:
+
+* sea-level lookup
+* water trend derivation
+* tide phase derivation
+
+### Pipeline behavior
+
+* parallel provider execution
+* partial-success persistence
+* fault injection support
+* enrichment idempotency
+* async enrichment trigger after insert
+
+---
+
+# UI Architecture Refactor (completed)
+
+The application architecture was simplified into domain-oriented views.
+
+## Current structure
+
+Tabs:
+
+* Fangster
+* Bulk
+* Steder
+
+`app/page.tsx` now acts primarily as:
+
+* coordinator
+* state owner
+* callback dispatcher
+
+UI domains split into:
+
+* `CatchesView`
+* `BulkOpsView`
+* `SpotsView`
+
+Spot management includes:
+
+* CRUD
+* aliases
+* import/export
+* modal editing
+* tolerant validation/import architecture
+
+---
+
+# Sprint 4 — Capture Flow & Field UX (completed)
+
+Sprint 4 intentionally avoided:
+
+* dashboard work
+* analytics work
+* map redesign
+* large UI rewrites
+
+The focus was entirely:
+
+> reducing field friction during real-world mobile catch logging.
+
+## Task 1 — Date Input Auto-Formatting
+
+Users can now type:
+
+```text
+12052026
+```
+
+and the field formats live into:
+
+```text
+12/05/2026
+```
+
+Implemented with:
+
+* lightweight inline formatting
+* numeric mobile keyboard
+* tolerant paste normalization
+* no masking library
+
+---
+
+## Task 2 — Fjord Input Removal
+
+The manual Fjord field was removed.
+
+`fjord` is now derived automatically from the selected Spot's `bodyOfWater`.
+
+Key architectural shift:
+
+> structured metadata derives from structured entities.
+
+Results:
+
+* fewer fields
+* less duplication
+* stronger geo model
+* less inconsistent data
+
+---
+
+## Task 3 — Length Input Mobile Optimization
+
+The length field now uses:
+
+```text
+type="text" + inputMode="numeric"
+```
+
+instead of `type="number"`.
+
+Benefits:
+
+* cleaner mobile keyboard
+* fewer accidental characters
+* normalization-based parsing
+* integer-only operational flow
+
+---
+
+## Task 4 — Conditional Location Field Visibility
+
+The free-text `Sted` field is now hidden whenever a structured Spot is selected.
+
+This reinforces:
+
+* Spot as authoritative geo entity
+* dual capture modes
+* lower visual noise
+* faster structured logging
+
+No synchronization or hidden derived state was introduced.
+
+---
+
+# Current Product Understanding
+
+A major product insight emerged during Sprint 4:
+
+> STL is primarily a field capture system.
+
+Not:
+
+* a dashboard product
+* a map-first product
+* a social fishing app
+
+The future value of the platform depends primarily on:
+
+* capture speed
+* capture consistency
+* structured entities
+* enrichment quality
+* operational usability in the field
+
+This now guides roadmap prioritization.
+
+---
+
+# Immediate Next Phase
+
+## Operational Usage & Observation
+
+Before major redesign work:
+
+* use the app actively in real fishing sessions
+* identify friction from actual field use
+* observe where logging still feels slow or mentally heavy
+* validate whether the current capture flow is "fast enough"
+
+The next wave of improvements should come primarily from:
+
+* real usage
+* repeated field sessions
+* operational irritation points
+
+—not speculative redesign.
+
+---
+
+# Upcoming Directions
+
+These are now considered likely future directions, but not all are immediate sprint candidates.
+
+---
+
+# Future Direction A — Data Access & Queryability
+
+The product direction is shifting away from map-first visualization.
+
+Primary future retrieval model is expected to become:
+
+* dense catch tables
+* filtering
+* search
+* correlation workflows
+* operational browsing
+
+Likely future capabilities:
+
+* searchable catch table
+* filtering by:
+
+  * spot
+  * bait
+  * tide phase
+  * wind
+  * date range
+  * undersized
+* saved query views
+* SQL-oriented analytics foundation
+
+Important:
+
+Maps are now viewed as:
+
+> exploratory tooling
+
+—not the application's primary interface.
+
+---
+
+# Future Direction B — Conversational Capture
+
+One of the strongest future directions identified so far:
+
+> conversational logging through ChatGPT.
+
+Example:
+
+```text
+Fangede en havørred ved Kyndby kl 21.
+Bombarda med Guldbassen.
+Under mål.
+```
+
+Potential flow:
+
+ChatGPT
+→ structured ingestion endpoint
+→ STL validation pipeline
+→ enrichment pipeline
+→ persisted catch
+
+Important architectural principle:
+
+> ChatGPT should be a capture interface — not the system of record.
+
+STL continues to own:
+
+* validation
+* storage
+* enrichment
+* history
+* identity
+
+This is considered a likely major future milestone.
+
+---
+
+# Deferred / Not Current Priorities
+
+The following are intentionally NOT current focus areas:
+
+* dashboard systems
+* chart-heavy analytics
+* social features
+* notifications
+* collaboration/team systems
+* native app
+* aggressive redesign work
+* complex state-management systems
+* large admin frameworks
+
+---
+
+# Potential Future Features
+
+## Medium-term
+
+* bait registry
+* image upload flow
+* image-assisted catch parsing
+* richer spot management
+* URL-synced filtering
+* operational catch tables
+
+## Longer-term
+
+* "Ask your log" / RAG over catch history
+* AI-assisted trend detection
+* advanced environmental correlations
+* field-photo ingestion workflows
+
+---
+
+# Engineering Principles (current)
+
+The project is currently following these principles intentionally:
+
+* small scoped feature branches
+* one operational improvement at a time
+* minimal abstraction
+* normalize instead of block
+* entity-owned metadata
+* derive structured data instead of manually entering it
+* mobile-first field ergonomics
+* avoid architecture churn without clear operational need
+
+---
+
+# Current Status
+
+## Platform
+
+Stable.
+
+## Deployment
+
+Operational.
+
+## Auth
+
+Operational.
+
+## Enrichment
+
+Operational.
+
+## Capture UX
+
+Significantly improved after Sprint 4.
+
+## Product Direction
+
+Increasingly clear and coherent.
