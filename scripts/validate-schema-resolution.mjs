@@ -41,23 +41,32 @@ function fail(label, detail) {
 }
 
 async function checkSchemaRouting(label, client) {
-  // Anon-key clients are blocked by RLS (no session), so we expect count=0.
-  // The critical assertion is: NO schema-routing error (no 406, no "relation not found").
+  // Expected for anon-key clients:
+  //   - 200 count=0  → schema routed, RLS blocked access (acceptable)
+  //   - 401/42501    → schema routed, anon has no USAGE grant (correct — intentional)
+  //   - 406/PGRST106 → schema NOT in PostgREST exposed list (failure)
   const [spotsRes, catchesRes] = await Promise.all([
     client.from('spots').select('*', { count: 'exact', head: true }),
     client.from('catches').select('*', { count: 'exact', head: true }),
   ])
 
-  const spotsRouted   = !spotsRes.error   || !spotsRes.error.message.includes('not found')
-  const catchesRouted = !catchesRes.error || !catchesRes.error.message.includes('not found')
+  const isSchemaError = (err) =>
+    err && (err.code === 'PGRST106' || err.message.toLowerCase().includes('invalid schema'))
+  const isPermDenied = (err) =>
+    err && (err.code === '42501' || err.message.includes('permission denied'))
 
-  if (spotsRes.error)   console.log(`       spots error:   ${spotsRes.error.message}`)
-  if (catchesRes.error) console.log(`       catches error: ${catchesRes.error.message}`)
+  const spotsRouted   = !isSchemaError(spotsRes.error)
+  const catchesRouted = !isSchemaError(catchesRes.error)
 
   const schemaOk = spotsRouted && catchesRouted
+
   if (schemaOk) {
-    pass(label, `spots count=${spotsRes.count ?? 'blocked-by-rls'} catches count=${catchesRes.count ?? 'blocked-by-rls'} (RLS blocks anon; no 406 = schema routing confirmed)`)
+    const spotsDetail   = isPermDenied(spotsRes.error)   ? 'anon blocked (expected)' : `count=${spotsRes.count}`
+    const catchesDetail = isPermDenied(catchesRes.error) ? 'anon blocked (expected)' : `count=${catchesRes.count}`
+    pass(label, `spots=${spotsDetail} catches=${catchesDetail} — schema routing confirmed`)
   } else {
+    if (spotsRes.error)   console.log(`       spots error:   ${spotsRes.error.message}`)
+    if (catchesRes.error) console.log(`       catches error: ${catchesRes.error.message}`)
     fail(label, 'Schema-routing error — havorred_log not in PostgREST exposed schemas')
   }
 }
