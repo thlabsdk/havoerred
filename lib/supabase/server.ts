@@ -3,9 +3,9 @@ import { createClient as createSupabaseServiceClient, type SupabaseClient } from
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-let cached: SupabaseClient | null = null
+let cached: SupabaseClient<any, 'havorred_log'> | null = null
 
-export function getSupabaseServer(): SupabaseClient {
+export function getSupabaseServer(): SupabaseClient<any, 'havorred_log'> {
   if (cached) return cached
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -19,6 +19,7 @@ export function getSupabaseServer(): SupabaseClient {
   }
 
   cached = createSupabaseServiceClient(url, serviceKey, {
+    db: { schema: 'havorred_log' },
     auth: { persistSession: false, autoRefreshToken: false },
   })
   return cached
@@ -37,6 +38,7 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
+    db: { schema: 'havorred_log' },
     cookies: {
       getAll() {
         return cookieStore.getAll()

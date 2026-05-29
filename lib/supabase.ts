@@ -5,5 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 // createBrowserClient reads and writes auth tokens via document.cookie.
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { db: { schema: 'havorred_log' } }
 )
