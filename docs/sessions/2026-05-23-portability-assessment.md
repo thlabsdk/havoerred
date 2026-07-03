@@ -247,3 +247,25 @@ hypothesis support count. The shape ports; the substrate must not.
 5. Read relevant ADRs in `docs/decisions/` — non-negotiable constraints.
 6. Run `git status` — must be clean on `main`.
 7. Begin at Recommended Next Steps above (Step 1 = go fish; Step 2 onward = when ready).
+
+---
+
+## Addendum (2026-07-03) — Personal OS plugin / Session Integrity note
+
+Added retroactively, following a cross-repository consolidation analysis in `personal-os`.
+Does not change anything above — preserved as historical record.
+
+- `startsession`/`endsession` are provided by the shared Personal OS plugin (delivered via the
+  machine-level `~/.claude/skills/` directory junction, not a local copy), so the Bootstrap
+  Precondition (Session Integrity Verification, Personal OS Sprint 0025) still executes here,
+  independent of this project's opt-out described above.
+- This project deliberately does not follow several Personal OS documentation conventions (no
+  `docs/sessions/` as an ongoing practice, no `.personal-os.json`, no Tier 1 bootstrap) — an
+  intentional choice recorded in this checkpoint's Decisions section, not an oversight.
+- Whether Session Integrity's checkpoint-consistency check behaves sensibly under this
+  project's structure — given this file is a one-off checkpoint rather than a maintained
+  `docs/sessions/` convention — has **not** been verified by an actual `/startsession` run since
+  Sprint 0025 introduced that phase. This is unconfirmed, not a known-working or known-broken
+  state.
+- This is a known, deliberate follow-up item, not a defect: verify it the next time this
+  project is actively worked on.
